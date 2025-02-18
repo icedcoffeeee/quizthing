@@ -1,9 +1,16 @@
 @import 'tailwindcss';
 
 .debug {
-  border: 1px solid #f00;
+	border: 1px solid #f00;
 }
 
 body {
-  font-family: 'Geist Mono', monospace;
+	font-family: 'Geist Mono', monospace;
+}
+
+.form-inp {
+	@apply w-60 rounded bg-white p-1 text-black;
+}
+.form-btn {
+	@apply w-60 rounded bg-slate-500 p-1;
 }
