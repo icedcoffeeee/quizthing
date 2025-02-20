@@ -1,5 +1,5 @@
 <script lang="ts">
-  import AddButton from "../add-button.svelte";
+  import AddButton from "comp/add-button.svelte";
 
   const { data } = $props();
 </script>
