@@ -20,7 +20,7 @@ export const questions = mysqlTable("questions", {
   id: serial("id").primaryKey(),
   created: timestamp("created").notNull().defaultNow(),
   title: text("title").notNull().default("new question"),
-  answerIDs: json("answerIDs").$type<number[]>().notNull().default([]),
+  quizID: int("quizID").notNull(),
   correctID: int("correctID"),
   media: text("media"),
 });
@@ -29,6 +29,7 @@ export const answers = mysqlTable("answers", {
   id: serial("id").primaryKey(),
   created: timestamp("created").notNull().defaultNow(),
   title: text("title").notNull().default("new answer"),
+  questionID: int("questionID").notNull(),
   // vv participants choosing this answer
   participantIDs: json("participantIDs").$type<number[]>().notNull().default([]),
 });

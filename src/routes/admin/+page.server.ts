@@ -1,6 +1,23 @@
-import { ADMIN_PASSWORD } from "$env/static/private";
-import { redirect, type ServerLoadEvent } from "@sveltejs/kit";
+import { type Actions } from "@sveltejs/kit";
+import { db, quizzes } from "$lib/server";
 
-export function load({ cookies }: ServerLoadEvent) {
-  if (cookies.get("logged") !== ADMIN_PASSWORD) redirect(307, "/");
+export async function load() {
+  const quizzes_ = await db.query.quizzes.findMany();
+  const questionsL = await Promise.all(
+    quizzes_.map((q) =>
+      db.query.questions
+        .findMany({ where: ({ quizID }, { eq }) => eq(quizID, q.id) })
+        .then((r) => r.length),
+    ),
+  );
+
+  return { quizzes: quizzes_, questionsL };
 }
+
+export const actions: Actions = {
+  async addquiz() {
+    const full = new Date().getTime().toString();
+    const code = full.substring(full.length - 9, full.length - 3);
+    await db.insert(quizzes).values({ code });
+  },
+};

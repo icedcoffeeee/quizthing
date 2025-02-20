@@ -9,7 +9,7 @@ body {
 }
 
 .form-inp {
-  @apply w-60 rounded bg-white p-1 text-black;
+  @apply w-60 rounded bg-white/10 p-1 text-white;
 }
 .form-btn {
   @apply w-60 rounded bg-slate-500 p-1;
