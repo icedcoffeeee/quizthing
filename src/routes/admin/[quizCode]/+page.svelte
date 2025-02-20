@@ -8,7 +8,21 @@
 </script>
 
 <div class="mb-5 flex items-baseline gap-5 pt-15">
-  <h1 contenteditable class="text-2xl">{data.quiz.name}</h1>
+  <h1
+    contenteditable
+    onfocusout={(e) => {
+      fetch("?/changequizname", {
+        method: "post",
+        body: new URLSearchParams([
+          ["quizID", data.quiz.id.toString()],
+          ["name", e.currentTarget.innerHTML],
+        ]),
+      });
+    }}
+    class="min-w-2rem text-2xl"
+  >
+    {data.quiz.name}
+  </h1>
   <span class="w-fit rounded bg-blue-900 px-1">{data.quiz.code}</span>
 </div>
 <h2 class="mb-5 text-lg">Questions</h2>
@@ -19,14 +33,40 @@
     <div class="h-fit max-w-min min-w-[20rem] rounded bg-white p-2 text-black">
       <input type="number" value={n + 1} min="1" max={data.questions.length} class="w-full" />
       <h3 contenteditable class="mb-4">{question.title}</h3>
+      <h3
+        contenteditable
+        onfocusout={(e) => {
+          fetch("?/changequestiontitle", {
+            method: "post",
+            body: new URLSearchParams([
+              ["questionID", question.id.toString()],
+              ["title", e.currentTarget.innerHTML],
+            ]),
+          });
+        }}
+        class="min-w-2rem mb-4"
+      >
+        {question.title}
+      </h3>
       <div class="flex flex-col gap-2">
         {#each data.answers[n] as answer}
           {#if answer}
-            <button
-              contenteditable
-              class="flex w-full justify-between rounded border border-blue-500 pl-2 text-left"
-            >
-              {answer.title}
+            <div class="flex w-full justify-between rounded border border-blue-500 pl-2 text-left">
+              <div
+                contenteditable
+                onfocusout={(e) => {
+                  fetch("?/changeanswertitle", {
+                    method: "post",
+                    body: new URLSearchParams([
+                      ["answerID", answer.id.toString()],
+                      ["title", e.currentTarget.innerHTML],
+                    ]),
+                  });
+                }}
+                class="min-w-2rem"
+              >
+                {answer.title}
+              </div>
               <ActionButton action="?/delanswer" class_="aspect-square h-fit self-center">
                 <input type="hidden" name="answerID" value={answer.id} />
                 <button
@@ -36,7 +76,7 @@
                   <X size={15}></X>
                 </button>
               </ActionButton>
-            </button>
+            </div>
           {/if}
         {/each}
         <div class="flex justify-between">

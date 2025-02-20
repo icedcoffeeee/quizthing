@@ -1,4 +1,4 @@
-import { answers, db, questions } from "$lib/server";
+import { answers, db, questions, quizzes } from "$lib/server";
 import { error, redirect, type Actions, type ServerLoadEvent } from "@sveltejs/kit";
 import { eq, inArray } from "drizzle-orm";
 import { zfd } from "zod-form-data";
@@ -70,5 +70,24 @@ export const actions: Actions = {
     const { answerID } = schema.parse(await request.formData());
 
     await db.delete(answers).where(eq(answers.id, answerID));
+  },
+
+  async changequizname({ request }) {
+    const schema = zfd.formData({ quizID: zfd.numeric(), name: zfd.text() });
+    const { quizID, name } = schema.parse(await request.formData());
+
+    await db.update(quizzes).set({ name }).where(eq(quizzes.id, quizID));
+  },
+  async changequestiontitle({ request }) {
+    const schema = zfd.formData({ questionID: zfd.numeric(), title: zfd.text() });
+    const { questionID, title } = schema.parse(await request.formData());
+
+    await db.update(questions).set({ title }).where(eq(questions.id, questionID));
+  },
+  async changeanswertitle({ request }) {
+    const schema = zfd.formData({ answerID: zfd.numeric(), title: zfd.text() });
+    const { answerID, title } = schema.parse(await request.formData());
+
+    await db.update(answers).set({ title }).where(eq(answers.id, answerID));
   },
 };
