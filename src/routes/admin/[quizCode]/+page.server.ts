@@ -1,5 +1,6 @@
 import { answers, db, questions } from "$lib/server";
 import { error, redirect, type Actions, type ServerLoadEvent } from "@sveltejs/kit";
+import { eq, inArray } from "drizzle-orm";
 import { zfd } from "zod-form-data";
 
 export async function load({ params: { quizCode } }: ServerLoadEvent) {
@@ -35,6 +36,24 @@ export const actions: Actions = {
 
     await db.insert(questions).values({ quizID: quiz.id });
   },
+  async delquestion({ request }) {
+    const schema = zfd.formData({ questionID: zfd.numeric() });
+    const { questionID } = schema.parse(await request.formData());
+
+    await db.query.questions
+      .findMany({
+        where: ({ id }, { eq }) => eq(id, questionID),
+      })
+      .then((q) =>
+        db.delete(answers).where(
+          inArray(
+            answers.questionID,
+            q.map((i) => i.id),
+          ),
+        ),
+      );
+    await db.delete(questions).where(eq(questions.id, questionID));
+  },
 
   async addanswer({ request }) {
     const schema = zfd.formData({ questionID: zfd.numeric() });
@@ -45,5 +64,11 @@ export const actions: Actions = {
     }))!;
 
     await db.insert(answers).values({ questionID: question.id }).$returningId();
+  },
+  async delanswer({ request }) {
+    const schema = zfd.formData({ answerID: zfd.numeric() });
+    const { answerID } = schema.parse(await request.formData());
+
+    await db.delete(answers).where(eq(answers.id, answerID));
   },
 };

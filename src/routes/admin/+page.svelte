@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getQuizStatus } from "$lib";
   import AddButton from "comp/add-button.svelte";
+  import DelButton from "comp/del-button.svelte";
 
   const { data } = $props();
 </script>
@@ -19,7 +20,12 @@
       </span>
       <p>{quiz.participantIDs?.length} participants</p>
       <span class="grow"></span>
-      <p>status: {getQuizStatus(quiz.status ?? -1)}</p>
+      <span class="flex justify-between">
+        <p>status: {getQuizStatus(quiz.status ?? -1)}</p>
+        <DelButton action="?/delquiz">
+          <input type="hidden" name="quizID" value={quiz.id} />
+        </DelButton>
+      </span>
     </a>
   {/each}
   <AddButton action="?/addquiz" class_="aspect-video"></AddButton>

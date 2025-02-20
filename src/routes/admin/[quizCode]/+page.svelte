@@ -1,5 +1,8 @@
 <script lang="ts">
+  import ActionButton from "comp/action-button.svelte";
   import AddButton from "comp/add-button.svelte";
+  import DelButton from "comp/del-button.svelte";
+  import { X } from "lucide-svelte";
 
   const { data } = $props();
 </script>
@@ -19,14 +22,31 @@
       <div class="flex flex-col gap-2">
         {#each data.answers[n] as answer}
           {#if answer}
-            <button contenteditable class="w-full rounded border border-blue-500 px-2 text-left">
+            <button
+              contenteditable
+              class="flex w-full justify-between rounded border border-blue-500 pl-2 text-left"
+            >
               {answer.title}
+              <ActionButton action="?/delanswer" class_="aspect-square h-fit self-center">
+                <input type="hidden" name="answerID" value={answer.id} />
+                <button
+                  onclick={(e) => e.stopPropagation()}
+                  class="flex h-full w-full items-center justify-center bg-white p-1 text-red-900"
+                >
+                  <X size={15}></X>
+                </button>
+              </ActionButton>
             </button>
           {/if}
         {/each}
-        <AddButton action="?/addanswer" class_="aspect-square inline w-fit">
-          <input type="hidden" name="questionID" value={question.id} />
-        </AddButton>
+        <div class="flex justify-between">
+          <AddButton action="?/addanswer" class_="aspect-square inline w-fit">
+            <input type="hidden" name="questionID" value={question.id} />
+          </AddButton>
+          <DelButton action="?/delquestion" class_="aspect-square h-fit self-center">
+            <input type="hidden" name="questionID" value={question.id} />
+          </DelButton>
+        </div>
       </div>
     </div>
   {/each}

@@ -1,6 +1,6 @@
 <script lang="ts">
   import ActionButton from "./action-button.svelte";
-  import type { ButtonProps } from "./comp";
+  import type { ButtonProps } from "./component";
   import { clsx } from "clsx";
 
   const { action, class_, children }: ButtonProps = $props();
