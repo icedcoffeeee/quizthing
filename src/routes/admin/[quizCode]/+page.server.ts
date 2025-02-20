@@ -1,5 +1,6 @@
 import { answers, db, questions } from "$lib/server";
 import { error, redirect, type Actions, type ServerLoadEvent } from "@sveltejs/kit";
+import { zfd } from "zod-form-data";
 
 export async function load({ params: { quizCode } }: ServerLoadEvent) {
   if (!quizCode) redirect(303, "/admin");
@@ -25,22 +26,22 @@ export async function load({ params: { quizCode } }: ServerLoadEvent) {
 
 export const actions: Actions = {
   async addquestion({ request }) {
-    const { quizID } = Object.fromEntries(await request.formData());
-    const quizID_ = parseInt(quizID.toString());
+    const schema = zfd.formData({ quizID: zfd.numeric() });
+    const { quizID } = schema.parse(await request.formData());
 
     const quiz = (await db.query.quizzes.findFirst({
-      where: ({ id }, { eq }) => eq(id, quizID_),
+      where: ({ id }, { eq }) => eq(id, quizID),
     }))!;
 
     await db.insert(questions).values({ quizID: quiz.id });
   },
 
   async addanswer({ request }) {
-    const { questionID } = Object.fromEntries(await request.formData());
-    const questionID_ = parseInt(questionID.toString());
+    const schema = zfd.formData({ questionID: zfd.numeric() });
+    const { questionID } = schema.parse(await request.formData());
 
     const question = (await db.query.questions.findFirst({
-      where: ({ id }, { eq }) => eq(id, questionID_),
+      where: ({ id }, { eq }) => eq(id, questionID),
     }))!;
 
     await db.insert(answers).values({ questionID: question.id }).$returningId();
