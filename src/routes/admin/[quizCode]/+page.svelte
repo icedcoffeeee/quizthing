@@ -1,9 +1,10 @@
 <script lang="ts">
+  import ActionButton from "$components/action-button.svelte";
+  import AddButton from "$components/add-button.svelte";
+  import DelButton from "$components/del-button.svelte";
+  import { Check, X } from "lucide-svelte";
+  import { clamp } from "$lib/utils";
   import { invalidateAll } from "$app/navigation";
-  import ActionButton from "comp/action-button.svelte";
-  import AddButton from "comp/add-button.svelte";
-  import DelButton from "comp/del-button.svelte";
-  import { X } from "lucide-svelte";
 
   const { data } = $props();
 
@@ -32,7 +33,7 @@
 <div
   class="-mx-5 flex flex-col items-center gap-4 overflow-auto px-5 pb-5 md:flex-row md:items-start"
 >
-  {#each data.questions as question, n (question.index)}
+  {#each data.questions as q, n (q.id)}
     <div class="h-fit max-w-min min-w-[20rem] rounded bg-white p-2 text-black">
       <input
         type="number"
@@ -41,12 +42,11 @@
         max={data.questions.length}
         class="w-full"
         onchange={(e) => {
-          const val = parseInt(e.currentTarget.value);
-          e.currentTarget.value = Math.min(Math.max(1, n + 1), data.questions.length).toString();
+          e.currentTarget.value = clamp(e.currentTarget.value, 1, data.questions.length).toString();
           manualFetch("?/changequestionorder", [
-            ["questionID", question.id.toString()],
-            ["oldIndex", question.index.toString()],
-            ["newIndex", val.toString()],
+            ["questionID", q.id.toString()],
+            ["oldIndex", q.index.toString()],
+            ["newIndex", e.currentTarget.value],
           ]);
         }}
       />
@@ -54,46 +54,66 @@
         contenteditable
         onfocusout={(e) => {
           manualFetch("?/changequestiontitle", [
-            ["questionID", question.id.toString()],
+            ["questionID", q.id.toString()],
             ["title", e.currentTarget.innerHTML],
           ]);
         }}
         class="min-w-2rem mb-4"
       >
-        {question.title}
+        {q.title}
       </h3>
       <div class="flex flex-col gap-2">
-        {#each data.answers[question.index - 1] as answer}
-          <div class="flex w-full justify-between rounded border border-blue-500 pl-2 text-left">
+        {#each data.answers[q.index - 1] as a}
+          <div
+            class="flex w-full justify-between rounded border border-blue-500 pl-2 text-left"
+            class:bg-blue-500={a.id === q.correctID}
+          >
             <div
               contenteditable
               onfocusout={(e) => {
                 manualFetch("?/changeanswertitle", [
-                  ["answerID", answer.id.toString()],
+                  ["answerID", a.id.toString()],
                   ["title", e.currentTarget.innerHTML],
                 ]);
               }}
               class="min-w-2rem"
+              class:text-white={a.id === q.correctID}
             >
-              {answer.title}
+              {a.title}
             </div>
-            <ActionButton action="?/delanswer" class_="aspect-square h-fit self-center">
-              <input type="hidden" name="answerID" value={answer.id} />
-              <button
-                onclick={(e) => e.stopPropagation()}
-                class="flex h-full w-full items-center justify-center bg-white p-1 text-red-900"
-              >
-                <X size={15}></X>
-              </button>
-            </ActionButton>
+            <div class="flex items-start">
+              <ActionButton action="?/coranswer" class_="aspect-square h-fit self-center">
+                <input type="hidden" name="questionID" value={q.id} />
+                <input type="hidden" name="answerID" value={a.id} />
+                <button
+                  onclick={(e) => e.stopPropagation()}
+                  class="flex h-full w-full items-center justify-center p-1 {a.id === q.correctID
+                    ? 'bg-blue-500 text-white'
+                    : 'text-blue-900" bg-white'}"
+                >
+                  <Check size={15}></Check>
+                </button>
+              </ActionButton>
+              <ActionButton action="?/delanswer" class_="aspect-square h-fit self-center">
+                <input type="hidden" name="answerID" value={a.id} />
+                <button
+                  onclick={(e) => e.stopPropagation()}
+                  class="flex h-full w-full items-center justify-center p-1 {a.id === q.correctID
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-white text-red-900'}"
+                >
+                  <X size={15}></X>
+                </button>
+              </ActionButton>
+            </div>
           </div>
         {/each}
         <div class="flex justify-between">
           <AddButton action="?/addanswer" class_="aspect-square inline w-fit">
-            <input type="hidden" name="questionID" value={question.id} />
+            <input type="hidden" name="questionID" value={q.id} />
           </AddButton>
           <DelButton action="?/delquestion" class_="aspect-square h-fit self-center">
-            <input type="hidden" name="questionID" value={question.id} />
+            <input type="hidden" name="questionID" value={q.id} />
           </DelButton>
         </div>
       </div>

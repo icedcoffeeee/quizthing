@@ -73,6 +73,12 @@ export const actions: Actions = {
 
     await db.delete(answers).where(eq(answers.id, answerID));
   },
+  async coranswer({ request }) {
+    const schema = zfd.formData({ questionID: zfd.numeric(), answerID: zfd.numeric() });
+    const { questionID, answerID: correctID } = schema.parse(await request.formData());
+
+    await db.update(questions).set({ correctID }).where(eq(questions.id, questionID));
+  },
 
   async changequizname({ request }) {
     const schema = zfd.formData({ quizID: zfd.numeric(), name: zfd.text() });
