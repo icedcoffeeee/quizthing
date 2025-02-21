@@ -21,6 +21,7 @@ export const questions = mysqlTable("questions", {
   created: timestamp("created").notNull().defaultNow(),
   title: text("title").notNull().default("new question"),
   quizID: int("quizID").notNull(),
+  index: int("index").notNull(),
   correctID: int("correctID"),
   media: text("media"),
 });

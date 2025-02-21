@@ -1,6 +1,6 @@
 import { answers, db, questions, quizzes } from "$lib/server";
 import { error, redirect, type Actions, type ServerLoadEvent } from "@sveltejs/kit";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, gt, gte, lt, lte, sql } from "drizzle-orm";
 import { zfd } from "zod-form-data";
 
 export async function load({ params: { quizCode } }: ServerLoadEvent) {
@@ -13,6 +13,7 @@ export async function load({ params: { quizCode } }: ServerLoadEvent) {
 
   const questions_ = await db.query.questions.findMany({
     where: ({ quizID }, { eq }) => eq(quizID, quiz.id),
+    orderBy: ({ index }, { asc }) => asc(index),
   });
   const answers_ = await Promise.all(
     questions_.map((q) =>
@@ -33,25 +34,26 @@ export const actions: Actions = {
     const quiz = (await db.query.quizzes.findFirst({
       where: ({ id }, { eq }) => eq(id, quizID),
     }))!;
+    const questionsL = (
+      await db.query.questions.findMany({
+        where: ({ quizID: quizID_ }, { eq }) => eq(quizID_, quizID),
+      })
+    ).length;
 
-    await db.insert(questions).values({ quizID: quiz.id });
+    await db.insert(questions).values({ quizID: quiz.id, index: questionsL + 1 });
   },
   async delquestion({ request }) {
     const schema = zfd.formData({ questionID: zfd.numeric() });
     const { questionID } = schema.parse(await request.formData());
 
-    await db.query.questions
-      .findMany({
-        where: ({ id }, { eq }) => eq(id, questionID),
-      })
-      .then((q) =>
-        db.delete(answers).where(
-          inArray(
-            answers.questionID,
-            q.map((i) => i.id),
-          ),
-        ),
-      );
+    const question = (await db.query.questions.findFirst({
+      where: ({ id }, { eq }) => eq(id, questionID),
+    }))!;
+    await db.delete(answers).where(eq(answers.questionID, question.id));
+    await db
+      .update(questions)
+      .set({ index: sql`${questions.index} - 1` })
+      .where(gt(questions.index, question.index));
     await db.delete(questions).where(eq(questions.id, questionID));
   },
 
@@ -89,5 +91,26 @@ export const actions: Actions = {
     const { answerID, title } = schema.parse(await request.formData());
 
     await db.update(answers).set({ title }).where(eq(answers.id, answerID));
+  },
+
+  async changequestionorder({ request }) {
+    const schema = zfd.formData({
+      questionID: zfd.numeric(),
+      oldIndex: zfd.numeric(),
+      newIndex: zfd.numeric(),
+    });
+    const { questionID, oldIndex, newIndex } = schema.parse(await request.formData());
+
+    if (newIndex < oldIndex)
+      await db
+        .update(questions)
+        .set({ index: sql`${questions.index} + 1` })
+        .where(and(gte(questions.index, newIndex), lt(questions.index, oldIndex)));
+    if (newIndex > oldIndex)
+      await db
+        .update(questions)
+        .set({ index: sql`${questions.index} - 1` })
+        .where(and(lte(questions.index, newIndex), gt(questions.index, oldIndex)));
+    await db.update(questions).set({ index: newIndex }).where(eq(questions.id, questionID));
   },
 };
