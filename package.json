@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
+    "start": "ts-node ./server.ts",
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo ''",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
@@ -19,7 +20,7 @@
   },
   "devDependencies": {
     "@fontsource/geist-mono": "^5.1.1",
-    "@sveltejs/adapter-auto": "^4.0.0",
+    "@sveltejs/adapter-node": "^5.2.12",
     "@sveltejs/kit": "^2.16.0",
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
     "@tailwindcss/vite": "^4.0.0",
@@ -36,9 +37,13 @@
     "vite": "^6.0.0"
   },
   "dependencies": {
+    "dotenv": "^16.4.7",
     "drizzle-orm": "^0.38.4",
     "mysql2": "^3.12.0",
-    "z": "^1.0.9",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
+    "ts-node": "^10.9.2",
+    "zod": "^3.24.2",
     "zod-form-data": "^2.0.5"
   }
 }

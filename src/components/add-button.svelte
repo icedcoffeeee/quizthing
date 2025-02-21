@@ -8,10 +8,10 @@
 
 <ActionButton
   {action}
-  class_={clsx("rounded border border-dashed border-blue-500 text-2xl text-blue-500", class_)}
+  class_={clsx("rounded border border-dashed border-blue-500 text-blue-500", class_)}
 >
   {#if children}
     {@render children()}
   {/if}
-  <button class="h-full w-full -translate-y-[2px]">+</button>
+  <button class="h-full w-full">+</button>
 </ActionButton>

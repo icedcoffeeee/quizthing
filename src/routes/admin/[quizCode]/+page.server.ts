@@ -119,4 +119,19 @@ export const actions: Actions = {
         .where(and(lte(questions.index, newIndex), gt(questions.index, oldIndex)));
     await db.update(questions).set({ index: newIndex }).where(eq(questions.id, questionID));
   },
+
+  async togglestatus({ request }) {
+    const schema = zfd.formData({ quizID: zfd.numeric() });
+    const { quizID } = schema.parse(await request.formData());
+
+    const quiz = (await db.query.quizzes.findFirst({ where: ({ id }, { eq }) => eq(id, quizID) }))!;
+    if (quiz.status >= 0) {
+      await db.update(quizzes).set({ status: -1 }).where(eq(quizzes.id, quizID));
+      return;
+    }
+
+    // TODO: check qualifications
+    await db.update(quizzes).set({ status: 0 }).where(eq(quizzes.id, quizID));
+    redirect(303, `/${quiz.code}`);
+  },
 };

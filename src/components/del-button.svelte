@@ -14,6 +14,6 @@
     onclick={(e) => e.stopPropagation()}
     class="flex h-full w-full items-center justify-center rounded-full bg-red-900 p-1 text-white"
   >
-    <Trash size={20}></Trash>
+    <Trash size={15}></Trash>
   </button>
 </ActionButton>

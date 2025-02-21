@@ -2,9 +2,10 @@
   import ActionButton from "$components/action-button.svelte";
   import AddButton from "$components/add-button.svelte";
   import DelButton from "$components/del-button.svelte";
-  import { Check, X } from "lucide-svelte";
+  import { ArrowRight, Check, Play, Square, X } from "lucide-svelte";
   import { clamp } from "$lib/utils";
   import { invalidateAll } from "$app/navigation";
+  import { getQuizStatus } from "$lib";
 
   const { data } = $props();
 
@@ -28,6 +29,27 @@
     {data.quiz.name}
   </h1>
   <span class="w-fit rounded bg-blue-900 px-1">{data.quiz.code}</span>
+</div>
+<div class="mb-5 flex items-center gap-4">
+  <ActionButton action="?/togglestatus" class_="aspect-square w-fit self-center">
+    <input type="hidden" name="quizID" value={data.quiz.id} />
+    <button class="flex h-full w-full items-center justify-center rounded-full bg-green-900 p-1">
+      {#if data.quiz.status === -1}
+        <Play size={15}></Play>
+      {:else}
+        <Square size={15}></Square>
+      {/if}
+    </button>
+  </ActionButton>
+  <p>status: {getQuizStatus(data.quiz.status)}</p>
+  {#if data.quiz.status !== -1}
+    <a
+      href="/{data.quiz.code}"
+      class="flex items-center justify-center rounded-full bg-blue-900 p-1"
+    >
+      <ArrowRight size={15}></ArrowRight>
+    </a>
+  {/if}
 </div>
 <h2 class="mb-5 text-lg">Questions</h2>
 <div
