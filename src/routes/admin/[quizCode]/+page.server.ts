@@ -1,4 +1,4 @@
-import { answers, db, questions, quizzes } from "$lib/server";
+import { answers_, db, questions_, quizzes_ } from "$lib/server";
 import { error, redirect, type Actions, type ServerLoadEvent } from "@sveltejs/kit";
 import { and, eq, gt, gte, lt, lte, sql } from "drizzle-orm";
 import { zfd } from "zod-form-data";
@@ -6,24 +6,24 @@ import { zfd } from "zod-form-data";
 export async function load({ params: { quizCode } }: ServerLoadEvent) {
   if (!quizCode) redirect(303, "/admin");
 
-  const quiz = await db.query.quizzes.findFirst({
+  const quiz = await db.query.quizzes_.findFirst({
     where: ({ code }, { eq }) => eq(code, quizCode),
   });
   if (!quiz) error(404, "quiz not found");
 
-  const questions_ = await db.query.questions.findMany({
+  const questions = await db.query.questions_.findMany({
     where: ({ quizID }, { eq }) => eq(quizID, quiz.id),
     orderBy: ({ index }, { asc }) => asc(index),
   });
-  const answers_ = await Promise.all(
-    questions_.map((q) =>
-      db.query.answers.findMany({
+  const answers = await Promise.all(
+    questions.map((q) =>
+      db.query.answers_.findMany({
         where: ({ questionID }, { eq }) => eq(questionID, q.id),
       }),
     ),
   );
 
-  return { quiz, questions: questions_, answers: answers_ };
+  return { quiz, questions, answers };
 }
 
 export const actions: Actions = {
@@ -31,72 +31,72 @@ export const actions: Actions = {
     const schema = zfd.formData({ quizID: zfd.numeric() });
     const { quizID } = schema.parse(await request.formData());
 
-    const quiz = (await db.query.quizzes.findFirst({
+    const quiz = (await db.query.quizzes_.findFirst({
       where: ({ id }, { eq }) => eq(id, quizID),
     }))!;
-    const questionsL = (
-      await db.query.questions.findMany({
+    const questions_L = (
+      await db.query.questions_.findMany({
         where: ({ quizID: quizID_ }, { eq }) => eq(quizID_, quizID),
       })
     ).length;
 
-    await db.insert(questions).values({ quizID: quiz.id, index: questionsL + 1 });
+    await db.insert(questions_).values({ quizID: quiz.id, index: questions_L + 1 });
   },
   async delquestion({ request }) {
     const schema = zfd.formData({ questionID: zfd.numeric() });
     const { questionID } = schema.parse(await request.formData());
 
-    const question = (await db.query.questions.findFirst({
+    const question = (await db.query.questions_.findFirst({
       where: ({ id }, { eq }) => eq(id, questionID),
     }))!;
-    await db.delete(answers).where(eq(answers.questionID, question.id));
+    await db.delete(answers_).where(eq(answers_.questionID, question.id));
     await db
-      .update(questions)
-      .set({ index: sql`${questions.index} - 1` })
-      .where(gt(questions.index, question.index));
-    await db.delete(questions).where(eq(questions.id, questionID));
+      .update(questions_)
+      .set({ index: sql`${questions_.index} - 1` })
+      .where(gt(questions_.index, question.index));
+    await db.delete(questions_).where(eq(questions_.id, questionID));
   },
 
   async addanswer({ request }) {
     const schema = zfd.formData({ questionID: zfd.numeric() });
     const { questionID } = schema.parse(await request.formData());
 
-    const question = (await db.query.questions.findFirst({
+    const question = (await db.query.questions_.findFirst({
       where: ({ id }, { eq }) => eq(id, questionID),
     }))!;
 
-    await db.insert(answers).values({ questionID: question.id }).$returningId();
+    await db.insert(answers_).values({ questionID: question.id }).$returningId();
   },
   async delanswer({ request }) {
     const schema = zfd.formData({ answerID: zfd.numeric() });
     const { answerID } = schema.parse(await request.formData());
 
-    await db.delete(answers).where(eq(answers.id, answerID));
+    await db.delete(answers_).where(eq(answers_.id, answerID));
   },
   async coranswer({ request }) {
     const schema = zfd.formData({ questionID: zfd.numeric(), answerID: zfd.numeric() });
     const { questionID, answerID: correctID } = schema.parse(await request.formData());
 
-    await db.update(questions).set({ correctID }).where(eq(questions.id, questionID));
+    await db.update(questions_).set({ correctID }).where(eq(questions_.id, questionID));
   },
 
   async changequizname({ request }) {
     const schema = zfd.formData({ quizID: zfd.numeric(), name: zfd.text() });
     const { quizID, name } = schema.parse(await request.formData());
 
-    await db.update(quizzes).set({ name }).where(eq(quizzes.id, quizID));
+    await db.update(quizzes_).set({ name }).where(eq(quizzes_.id, quizID));
   },
   async changequestiontitle({ request }) {
     const schema = zfd.formData({ questionID: zfd.numeric(), title: zfd.text() });
     const { questionID, title } = schema.parse(await request.formData());
 
-    await db.update(questions).set({ title }).where(eq(questions.id, questionID));
+    await db.update(questions_).set({ title }).where(eq(questions_.id, questionID));
   },
   async changeanswertitle({ request }) {
     const schema = zfd.formData({ answerID: zfd.numeric(), title: zfd.text() });
     const { answerID, title } = schema.parse(await request.formData());
 
-    await db.update(answers).set({ title }).where(eq(answers.id, answerID));
+    await db.update(answers_).set({ title }).where(eq(answers_.id, answerID));
   },
 
   async changequestionorder({ request }) {
@@ -109,29 +109,31 @@ export const actions: Actions = {
 
     if (newIndex < oldIndex)
       await db
-        .update(questions)
-        .set({ index: sql`${questions.index} + 1` })
-        .where(and(gte(questions.index, newIndex), lt(questions.index, oldIndex)));
+        .update(questions_)
+        .set({ index: sql`${questions_.index} + 1` })
+        .where(and(gte(questions_.index, newIndex), lt(questions_.index, oldIndex)));
     if (newIndex > oldIndex)
       await db
-        .update(questions)
-        .set({ index: sql`${questions.index} - 1` })
-        .where(and(lte(questions.index, newIndex), gt(questions.index, oldIndex)));
-    await db.update(questions).set({ index: newIndex }).where(eq(questions.id, questionID));
+        .update(questions_)
+        .set({ index: sql`${questions_.index} - 1` })
+        .where(and(lte(questions_.index, newIndex), gt(questions_.index, oldIndex)));
+    await db.update(questions_).set({ index: newIndex }).where(eq(questions_.id, questionID));
   },
 
   async togglestatus({ request }) {
     const schema = zfd.formData({ quizID: zfd.numeric() });
     const { quizID } = schema.parse(await request.formData());
 
-    const quiz = (await db.query.quizzes.findFirst({ where: ({ id }, { eq }) => eq(id, quizID) }))!;
+    const quiz = (await db.query.quizzes_.findFirst({
+      where: ({ id }, { eq }) => eq(id, quizID),
+    }))!;
     if (quiz.status >= 0) {
-      await db.update(quizzes).set({ status: -1 }).where(eq(quizzes.id, quizID));
+      await db.update(quizzes_).set({ status: -1 }).where(eq(quizzes_.id, quizID));
       return;
     }
 
     // TODO: check qualifications
-    await db.update(quizzes).set({ status: 0 }).where(eq(quizzes.id, quizID));
+    await db.update(quizzes_).set({ status: 0 }).where(eq(quizzes_.id, quizID));
     redirect(303, `/${quiz.code}`);
   },
 };

@@ -7,6 +7,9 @@
 body {
   font-family: "Geist Mono", monospace;
 }
+button{
+  cursor: pointer;
+}
 
 .form-inp {
   @apply w-60 rounded bg-white/10 p-1 text-white;

@@ -25,7 +25,7 @@
   <a onclick={openNav} href="/" class="md:hidden">home</a>
   <span class="contents md:flex md:gap-8">
     <a onclick={openNav} href="/about">about</a>
-    {#if data.logged}
+    {#if data.admin}
       <form action="/login?/logout" method="post">
         <button onclick={openNav}>log out</button>
       </form>

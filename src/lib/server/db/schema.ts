@@ -1,12 +1,12 @@
 import { int, json, mysqlTable, serial, text, timestamp } from "drizzle-orm/mysql-core";
 
-export const participants = mysqlTable("participants", {
+export const participants_ = mysqlTable("participants", {
   id: serial("id").primaryKey(),
   created: timestamp("created").notNull().defaultNow(),
   name: text("name").notNull(),
 });
 
-export const quizzes = mysqlTable("quizzes", {
+export const quizzes_ = mysqlTable("quizzes", {
   id: serial("id").primaryKey(),
   created: timestamp("created").notNull().defaultNow(),
   name: text("name").notNull().default("new quiz"),
@@ -16,7 +16,7 @@ export const quizzes = mysqlTable("quizzes", {
   participantIDs: json("participantIDs").$type<number[]>().notNull().default([]),
 });
 
-export const questions = mysqlTable("questions", {
+export const questions_ = mysqlTable("questions", {
   id: serial("id").primaryKey(),
   created: timestamp("created").notNull().defaultNow(),
   title: text("title").notNull().default("new question"),
@@ -26,11 +26,11 @@ export const questions = mysqlTable("questions", {
   media: text("media"),
 });
 
-export const answers = mysqlTable("answers", {
+export const answers_ = mysqlTable("answers", {
   id: serial("id").primaryKey(),
   created: timestamp("created").notNull().defaultNow(),
   title: text("title").notNull().default("new answer"),
   questionID: int("questionID").notNull(),
-  // vv participants choosing this answer
+  // vv participants_ choosing this answer
   participantIDs: json("participantIDs").$type<number[]>().notNull().default([]),
 });

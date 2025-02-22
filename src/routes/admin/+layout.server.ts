@@ -1,6 +1,6 @@
-import { ADMIN_PASSWORD } from "$env/static/private";
 import { redirect, type ServerLoadEvent } from "@sveltejs/kit";
 
-export async function load({ cookies }: ServerLoadEvent) {
-  if (cookies.get("logged") !== ADMIN_PASSWORD) redirect(307, "/");
+export async function load({ parent }: ServerLoadEvent) {
+  const { admin } = await parent();
+  if (!admin) redirect(307, "/");
 }

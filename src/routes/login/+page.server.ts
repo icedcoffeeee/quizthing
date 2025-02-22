@@ -8,7 +8,7 @@ export const actions: Actions = {
     const { user, pass } = schema.parse(await request.formData());
 
     if (user === ADMIN_USERNAME && pass === ADMIN_PASSWORD) {
-      cookies.set("logged", pass, {
+      cookies.set("admin", pass, {
         path: "/",
         maxAge: 24 * 60 * 60,
         secure: import.meta.env.PROD,
@@ -18,7 +18,7 @@ export const actions: Actions = {
     return { success: false, message: "incorrect username or password" };
   },
   async logout({ cookies }) {
-    cookies.delete("logged", { path: "/" });
+    cookies.delete("admin", { path: "/" });
     redirect(303, "/");
   },
 };

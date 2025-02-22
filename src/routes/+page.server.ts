@@ -1,8 +1,9 @@
 import { redirect, type Actions, type ServerLoadEvent } from "@sveltejs/kit";
 import { zfd } from "zod-form-data";
 
-export function load({ cookies }: ServerLoadEvent) {
-  if (cookies.get("logged")) redirect(307, "admin");
+export async function load({ parent }: ServerLoadEvent) {
+  const { admin } = await parent();
+  if (admin) redirect(307, "/admin");
 }
 
 export const actions: Actions = {
