@@ -1,4 +1,4 @@
-import { int, json, mysqlTable, serial, text, timestamp } from "drizzle-orm/mysql-core";
+import { float, int, json, mysqlTable, serial, text, timestamp } from "drizzle-orm/mysql-core";
 
 export const participants_ = mysqlTable("participants", {
   id: serial("id").primaryKey(),
@@ -12,7 +12,7 @@ export const quizzes_ = mysqlTable("quizzes", {
   name: text("name").notNull().default("new quiz"),
   code: text("code").notNull(),
   // vv off = -1, waiting = 0, > 0 = question #
-  status: int("status").notNull().default(-1),
+  status: float("status").notNull().default(-1),
   participantIDs: json("participantIDs").$type<number[]>().notNull().default([]),
 });
 

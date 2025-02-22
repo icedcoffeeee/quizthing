@@ -3,16 +3,10 @@
   import AddButton from "$components/add-button.svelte";
   import DelButton from "$components/del-button.svelte";
   import { ArrowRight, Check, Play, Trash, X } from "lucide-svelte";
-  import { clamp } from "$lib/utils";
-  import { invalidateAll } from "$app/navigation";
+  import { clamp, manualFetch } from "$lib";
   import { getQuizStatus } from "$lib";
 
   const { data } = $props();
-
-  function manualFetch(action: string, data: string[][]) {
-    fetch(action, { method: "post", body: new URLSearchParams(data) });
-    invalidateAll();
-  }
 </script>
 
 <div class="mb-5 flex items-baseline gap-5 pt-15">

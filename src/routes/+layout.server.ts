@@ -3,5 +3,6 @@ import type { ServerLoadEvent } from "@sveltejs/kit";
 
 export function load({ cookies }: ServerLoadEvent) {
   const admin = cookies.get("admin") === ADMIN_PASSWORD;
-  return { admin };
+  const userID = cookies.get("user");
+  return { admin, userID };
 }
