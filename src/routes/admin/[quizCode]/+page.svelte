@@ -2,7 +2,7 @@
   import ActionButton from "$components/action-button.svelte";
   import AddButton from "$components/add-button.svelte";
   import DelButton from "$components/del-button.svelte";
-  import { ArrowRight, Check, Play, Square, X } from "lucide-svelte";
+  import { ArrowRight, Check, Play, Trash, X } from "lucide-svelte";
   import { clamp } from "$lib/utils";
   import { invalidateAll } from "$app/navigation";
   import { getQuizStatus } from "$lib";
@@ -33,11 +33,11 @@
 <div class="mb-5 flex items-center gap-4">
   <ActionButton action="?/togglestatus" class_="aspect-square w-fit self-center">
     <input type="hidden" name="quizID" value={data.quiz.id} />
-    <button class="flex h-full w-full items-center justify-center rounded-full bg-green-900 p-1">
+    <button class="flex h-full w-full items-center justify-center rounded-full bg-green-900 p-2">
       {#if data.quiz.status === -1}
         <Play size={15}></Play>
       {:else}
-        <Square size={15}></Square>
+        <X size={15}></X>
       {/if}
     </button>
   </ActionButton>
@@ -45,7 +45,7 @@
   {#if data.quiz.status !== -1}
     <a
       href="/{data.quiz.code}"
-      class="flex items-center justify-center rounded-full bg-blue-900 p-1"
+      class="flex items-center justify-center rounded-full bg-blue-900 p-2"
     >
       <ArrowRight size={15}></ArrowRight>
     </a>
@@ -124,7 +124,7 @@
                     ? 'bg-blue-500 text-white'
                     : 'bg-white text-red-900'}"
                 >
-                  <X size={15}></X>
+                  <Trash size={15}></Trash>
                 </button>
               </ActionButton>
             </div>

@@ -12,7 +12,7 @@
   {/if}
   <button
     onclick={(e) => e.stopPropagation()}
-    class="flex h-full w-full items-center justify-center rounded-full bg-red-900 p-1 text-white"
+    class="flex h-full w-full items-center justify-center rounded-full bg-red-900 p-2 text-white"
   >
     <Trash size={15}></Trash>
   </button>
