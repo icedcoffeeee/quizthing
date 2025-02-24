@@ -5,6 +5,7 @@
   import { Menu, X } from "lucide-svelte";
 
   let { children, data } = $props();
+  const { admin } = $derived(data);
 
   let nav = $state(false);
   let openNav = () => (nav = !nav);
@@ -25,7 +26,7 @@
   <a onclick={openNav} href="/" class="md:hidden">home</a>
   <span class="contents md:flex md:gap-8">
     <a onclick={openNav} href="/about">about</a>
-    {#if data.admin}
+    {#if admin}
       <form action="/login?/logout" method="post">
         <button onclick={openNav}>log out</button>
       </form>

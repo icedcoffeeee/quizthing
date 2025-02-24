@@ -7,6 +7,7 @@
   import { getQuizStatus } from "$lib";
 
   const { data } = $props();
+  const { quiz, questions, answers } = $derived(data);
 </script>
 
 <div class="mb-5 flex items-baseline gap-5 pt-15">
@@ -14,31 +15,31 @@
     contenteditable
     onfocusout={(e) => {
       manualFetch("?/changequizname", [
-        ["quizID", data.quiz.id.toString()],
+        ["quizID", quiz.id.toString()],
         ["name", e.currentTarget.innerHTML],
       ]);
     }}
     class="min-w-2rem text-2xl"
   >
-    {data.quiz.name}
+    {quiz.name}
   </h1>
-  <span class="w-fit rounded bg-blue-900 px-1">{data.quiz.code}</span>
+  <span class="w-fit rounded bg-blue-900 px-1">{quiz.code}</span>
 </div>
 <div class="mb-5 flex items-center gap-4">
   <ActionButton action="?/togglestatus" class_="aspect-square w-fit self-center">
-    <input type="hidden" name="quizID" value={data.quiz.id} />
+    <input type="hidden" name="quizID" value={quiz.id} />
     <button class="flex h-full w-full items-center justify-center rounded-full bg-green-900 p-2">
-      {#if data.quiz.status === -1}
+      {#if quiz.status === -1}
         <Play size={15}></Play>
       {:else}
         <X size={15}></X>
       {/if}
     </button>
   </ActionButton>
-  <p>status: {getQuizStatus(data.quiz.status)}</p>
-  {#if data.quiz.status !== -1}
+  <p>status: {getQuizStatus(quiz.status)}</p>
+  {#if quiz.status !== -1}
     <a
-      href="/{data.quiz.code}"
+      href="/{quiz.code}"
       class="flex items-center justify-center rounded-full bg-blue-900 p-2"
     >
       <ArrowRight size={15}></ArrowRight>
@@ -49,16 +50,16 @@
 <div
   class="-mx-5 flex flex-col items-center gap-4 overflow-auto px-5 pb-5 md:flex-row md:items-start"
 >
-  {#each data.questions as q, n (q.id)}
+  {#each questions as q, n (q.id)}
     <div class="h-fit max-w-min min-w-[20rem] rounded bg-white p-2 text-black">
       <input
         type="number"
         value={n + 1}
         min="1"
-        max={data.questions.length}
+        max={questions.length}
         class="w-full"
         onchange={(e) => {
-          e.currentTarget.value = clamp(e.currentTarget.value, 1, data.questions.length).toString();
+          e.currentTarget.value = clamp(e.currentTarget.value, 1, questions.length).toString();
           manualFetch("?/changequestionorder", [
             ["questionID", q.id.toString()],
             ["oldIndex", q.index.toString()],
@@ -79,7 +80,7 @@
         {q.title}
       </h3>
       <div class="flex flex-col gap-2">
-        {#each data.answers[q.index - 1] as a}
+        {#each answers[q.index - 1] as a}
           <div
             class="flex w-full justify-between rounded border border-blue-500 pl-2 text-left"
             class:bg-blue-500={a.id === q.correctID}
@@ -136,6 +137,6 @@
     </div>
   {/each}
   <AddButton action="?/addquestion" class_="max-w-min min-w-[20rem]">
-    <input type="hidden" name="quizID" value={data.quiz.id} />
+    <input type="hidden" name="quizID" value={quiz.id} />
   </AddButton>
 </div>
