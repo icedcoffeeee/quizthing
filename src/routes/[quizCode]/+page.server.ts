@@ -56,7 +56,6 @@ export const actions: Actions = {
       where: ({ code }, { eq }) => eq(code, quizCode),
     }))!;
     const status = quiz.status == questionIND ? quiz.status + 0.5 : questionIND;
-    console.log(status);
     await db.update(quizzes_).set({ status }).where(eq(quizzes_.code, quizCode));
   },
   async answer({ request }) {

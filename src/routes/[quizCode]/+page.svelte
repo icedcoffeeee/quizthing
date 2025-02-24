@@ -5,41 +5,37 @@
   import { io } from "socket.io-client";
 
   const { data } = $props();
-  const { quiz, questions, answers, userAnswers } = $derived(data);
 
   const socket = io();
   socket.on("db-updated", () => {
-    console.log("got update");
     invalidateAll();
   });
   const trigger = () => {
-    console.log("sending update");
     socket.emit("update-db");
   };
-
-  let userAnswer = $derived(userAnswers ? userAnswers[quiz.status - 1] : undefined);
+  let userAnswer = $derived(data.userAnswers ? data.userAnswers[data.quiz.status - 1] : undefined);
   let chosenAnswerID = $state(0);
 </script>
 
 <div class="mb-5 flex items-baseline gap-5 pt-15">
   <h1 class="min-w-2rem text-2xl">
-    {quiz.name}
+    {data.quiz.name}
   </h1>
-  <span class="w-fit rounded bg-blue-900 px-1">{quiz.code}</span>
+  <span class="w-fit rounded bg-blue-900 px-1">{data.quiz.code}</span>
 </div>
 
 <div class="flex h-[70lvh] w-full flex-col gap-4 md:flex-row">
   <div class="relative flex h-full grow flex-col items-center justify-center">
-    {#if quiz.status <= 0}
+    {#if data.quiz.status <= 0}
       <p class="animate-pulse">waiting for the host...</p>
     {:else}
       <div class="grid w-full max-w-md gap-5">
         <div class="flex flex-col gap-2 rounded bg-white p-4 text-lg text-black">
           <div class="mb-5">
-            {Math.floor(questions[Math.floor(quiz.status) - 1].index)}
-            {questions[Math.floor(quiz.status) - 1].title}
+            {Math.floor(data.questions[Math.floor(data.quiz.status) - 1].index)}
+            {data.questions[Math.floor(data.quiz.status) - 1].title}
           </div>
-          {#each answers[Math.floor(quiz.status) - 1] as answer, n}
+          {#each data.answers[Math.floor(data.quiz.status) - 1] as answer, n}
             <div class="flex flex-col gap-2">
               <button
                 onclick={() => (!userAnswer ? (chosenAnswerID = answer.id) : null)}
@@ -51,32 +47,38 @@
               </button>
             </div>
           {/each}
-          <form
-            action="?/answer"
-            method="post"
-            use:enhance
-            class="w-fit self-end rounded bg-blue-500 px-2 text-white"
-            class:opacity-80={!(userAnswer ?? chosenAnswerID) ||
-              quiz.status % 1 !== 0 ||
-              !!userAnswer}
-          >
-            <input type="hidden" name="chosenAnswerID" value={chosenAnswerID} />
-            <input type="hidden" name="userID" value={data.userID} />
-            <button
-              disabled={!(userAnswer ?? chosenAnswerID) || quiz.status % 1 !== 0 || !!userAnswer}
-              onclick={trigger}>Submit</button
+          {#if !data.admin}
+            <form
+              action="?/answer"
+              method="post"
+              use:enhance
+              class="w-fit self-end rounded bg-blue-500 px-2 text-white"
+              class:opacity-80={!(userAnswer ?? chosenAnswerID) ||
+                data.quiz.status % 1 !== 0 ||
+                !!userAnswer}
             >
-          </form>
+              <input type="hidden" name="chosenAnswerID" value={chosenAnswerID} />
+              <input type="hidden" name="userID" value={data.userID} />
+              <button
+                disabled={!(userAnswer ?? chosenAnswerID) ||
+                  data.quiz.status % 1 !== 0 ||
+                  !!userAnswer}
+                onclick={trigger}
+              >
+                Submit
+              </button>
+            </form>
+          {/if}
         </div>
         <div class="flex flex-col gap-2 rounded bg-white p-2">
-          {#each data.answers[Math.floor(quiz.status) - 1].sort((a, b) => b.participantIDs.length - a.participantIDs.length) as answer, n}
+          {#each data.answers[Math.floor(data.quiz.status) - 1].sort((a, b) => b.participantIDs.length - a.participantIDs.length) as answer, n}
             <div
               style="--amount:{(answer.participantIDs.length /
-                Math.max(quiz.participantIDs.length, 1)) *
+                Math.max(data.quiz.participantIDs.length, 1)) *
                 100}%"
               class="w-(--amount) rounded bg-gray-300 px-2 text-nowrap text-black"
             >
-              {quiz.status % 1 === 0
+              {data.quiz.status % 1 === 0
                 ? `?? ${answer.participantIDs.length}`
                 : String.fromCharCode(65 + n)}
             </div>
@@ -87,11 +89,11 @@
 
     {#if data.admin}
       <div
-        style="--col:{Math.min(questions.length + 2, 10)}"
+        style="--col:{Math.min(data.questions.length + 2, 10)}"
         class="absolute bottom-0 grid translate-y-full grid-cols-[repeat(var(--col),1fr)] gap-2"
       >
         <form action="?/stop" method="post" use:enhance class="contents">
-          <input type="hidden" name="quizCode" value={quiz.code} />
+          <input type="hidden" name="quizCode" value={data.quiz.code} />
           <button onclick={trigger} class="aspect-square rounded-full bg-green-900 p-2">
             <X size={15}></X>
           </button>
@@ -103,9 +105,9 @@
             <Pause size={15}></Pause>
           </button>
         </form>
-        {#each questions as question (question.id)}
+        {#each data.questions as question (question.id)}
           <form action="?/question" method="post" use:enhance class="contents">
-            <input type="hidden" name="quizCode" value={quiz.code} />
+            <input type="hidden" name="quizCode" value={data.quiz.code} />
             <input type="hidden" name="questionIND" value={question.index} />
             <button onclick={trigger} class="aspect-square rounded-full bg-white text-black">
               <div>{question.index}</div>
