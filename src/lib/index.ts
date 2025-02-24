@@ -11,7 +11,7 @@ export function getQuizStatus(status: number) {
   }
 }
 
-export function manualFetch(action: string, data: string[][]) {
+export function manualFetch(action: string, data: any) {
   fetch(action, { method: "post", body: new URLSearchParams(data) });
   invalidateAll();
 }

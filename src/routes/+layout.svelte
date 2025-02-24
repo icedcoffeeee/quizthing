@@ -17,7 +17,7 @@
 
 <nav
   data-open={nav}
-  class="invisible z-10 absolute top-0 flex min-h-screen w-full flex-col items-center justify-center gap-2 bg-slate-500 p-5 text-white data-[open=true]:visible md:visible md:min-h-fit md:flex-row md:justify-between md:bg-white/0"
+  class="invisible absolute top-0 z-10 flex min-h-screen w-full flex-col items-center justify-center gap-2 bg-slate-500 p-5 text-white data-[open=true]:visible md:visible md:min-h-fit md:flex-row md:justify-between md:bg-white/0"
 >
   <button onclick={openNav} class="absolute top-0 flex w-full justify-end p-5 text-white md:hidden">
     <X></X>

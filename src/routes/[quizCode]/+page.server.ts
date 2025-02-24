@@ -1,103 +1,74 @@
-import type { Actions, PageServerLoadEvent } from "./$types";
-import { answers_, db, participants_, quizzes_ } from "$lib/server";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import type { Actions, PageServerLoadEvent, RequestEvent } from "./$types";
+import { db, questions_, quizzes_, users_answers, users_quizzes } from "$lib/server";
+import { asc, eq, sql } from "drizzle-orm";
 import { error, redirect } from "@sveltejs/kit";
 import { zfd } from "zod-form-data";
 
 export async function load({ parent, params: { quizCode } }: PageServerLoadEvent) {
-  if (!quizCode) redirect(303, "/");
-
+  // prettier-ignore
   const quiz = await db.query.quizzes_.findFirst({
-    where: ({ code }, { eq }) => eq(code, quizCode),
+    where: eq(quizzes_.code, quizCode),
+    with: {
+      questions: {
+        orderBy: asc(questions_.index),
+        with: { answers: { with: { users_bridge: {
+          columns: {},
+          with: { to_answer: true },
+        }}}},
+      },
+      users_bridge: {
+        columns: {},
+        with: { to_user: { with: { answers_bridge: {
+          columns: {},
+          with: { to_answer: true },
+        }}}},
+      },
+    },
   });
-  if (!quiz) error(404, "quiz not found");
 
+  if (!quiz) error(404, "quiz not found");
   if (quiz.status === -1) error(403, "quiz is currently not live");
 
   const { admin, userID } = await parent();
-
-  const questions = await db.query.questions_.findMany({
-    where: ({ quizID }, { eq }) => eq(quizID, quiz.id),
-    orderBy: ({ index }, { asc }) => asc(index),
-  });
-  const answers = await Promise.all(
-    questions.map((q) =>
-      db.query.answers_.findMany({
-        where: ({ questionID }, { eq }) => eq(questionID, q.id),
-      }),
-    ),
-  );
-
-  let userAnswers;
   if (!admin) {
     if (!userID) {
-      const url = new URL("/register");
-      url.searchParams.append("redirect", quizCode);
-      redirect(303, url);
+      redirect(303, `/register?redirect=${quizCode}`);
     }
-    if (!quiz.participantIDs.includes(parseInt(userID)))
-      await db
-        .update(quizzes_)
-        .set({
-          participantIDs: sql`JSON_ARRAY_INSERT(${quizzes_.participantIDs}, '$[0]', CAST(${userID} AS JSON))`,
-        })
-        .where(and(eq(quizzes_.code, quizCode)));
-    userAnswers = answers
-      .map((as) => as.find((a) => a.participantIDs.includes(parseInt(userID))))
-      .map((a) => a?.id);
+    if (!quiz.users_bridge.map((b) => b.to_user.id).includes(userID))
+      await db.insert(users_quizzes).values({ userID, quizCode });
   }
 
-  const participants = await db.query.participants_.findMany({
-    where: ({ id }, { inArray }) => inArray(id, quiz.participantIDs),
-    orderBy: ({ correct }, { desc }) => desc(correct),
-  });
+  return { quiz };
+}
 
-  return { quiz, questions, answers, participants, userAnswers };
+async function setstatus(request: Request, status: number) {
+  const { quizCode } = zfd.formData({ quizCode: zfd.text() }).parse(await request.formData());
+
+  await db.update(quizzes_).set({ status }).where(eq(quizzes_.code, quizCode));
+
+  if (status === -1) redirect(303, "/admin/" + quizCode);
 }
 
 export const actions: Actions = {
-  async stop({ request }) {
-    const { quizCode } = zfd.formData({ quizCode: zfd.text() }).parse(await request.formData());
-    await db.update(quizzes_).set({ status: -1 }).where(eq(quizzes_.code, quizCode));
-    redirect(303, `/admin/${quizCode}`);
-  },
-  async pause({ request }) {
-    const { quizCode } = zfd.formData({ quizCode: zfd.text() }).parse(await request.formData());
-    await db.update(quizzes_).set({ status: 0 }).where(eq(quizzes_.code, quizCode));
-  },
-  async question({ request }) {
-    const { quizCode, questionIND } = zfd
-      .formData({ quizCode: zfd.text(), questionIND: zfd.numeric() })
-      .parse(await request.formData());
-    const quiz = (await db.query.quizzes_.findFirst({
-      where: ({ code }, { eq }) => eq(code, quizCode),
-    }))!;
-    const status = quiz.status === questionIND ? quiz.status + 0.5 : questionIND;
-    if (quiz.status === questionIND) {
-      const question = (await db.query.questions_.findFirst({
-        where: ({ quizID }, { eq }) => eq(quizID, quiz.id),
-      }))!;
-      const answer = (await db.query.answers_.findFirst({
-        where: ({ id, questionID }, { and, eq }) =>
-          and(eq(questionID, question.id), eq(id, question.correctID!)),
-      }))!;
-      await db
-        .update(participants_)
-        .set({ correct: sql`${participants_.correct} + 1` })
-        .where(inArray(participants_.id, answer.participantIDs));
-    }
-    await db.update(quizzes_).set({ status }).where(eq(quizzes_.code, quizCode));
-  },
-  async answer({ request }) {
-    const { chosenAnswerID, correctID, userID } = zfd
-      .formData({ chosenAnswerID: zfd.numeric(), correctID: zfd.numeric(), userID: zfd.numeric() })
+  stop: ({ request }) => setstatus(request, -1),
+  pause: ({ request }) => setstatus(request, 0),
+
+  async question({ request }: RequestEvent) {
+    const { quizCode, index, status } = zfd
+      .formData({ quizCode: zfd.text(), index: zfd.numeric(), status: zfd.numeric() })
       .parse(await request.formData());
     await db
-      .update(answers_)
-      .set({
-        participantIDs: sql`JSON_ARRAY_INSERT(${answers_.participantIDs}, '$[0]', ${userID})`,
-      })
-      .where(eq(answers_.id, chosenAnswerID));
-    console.log(chosenAnswerID, correctID, userID);
+      .update(quizzes_)
+      .set({ status: index === status ? sql`${quizzes_.status} + 0.5` : index })
+      .where(eq(quizzes_.code, quizCode));
+  },
+
+  async answer({ request }: RequestEvent) {
+    const { userID, answerID } = zfd
+      .formData({ userID: zfd.numeric(), answerID: zfd.numeric() })
+      .parse(await request.formData());
+
+    // link answer to user
+    await db.insert(users_answers).values({ userID, answerID });
   },
 };

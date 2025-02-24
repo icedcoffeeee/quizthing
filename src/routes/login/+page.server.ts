@@ -1,5 +1,6 @@
+import type { Actions } from "./$types";
 import { ADMIN_PASSWORD, ADMIN_USERNAME } from "$env/static/private";
-import { redirect, type Actions } from "@sveltejs/kit";
+import { redirect } from "@sveltejs/kit";
 import { zfd } from "zod-form-data";
 
 export const actions: Actions = {
@@ -17,6 +18,7 @@ export const actions: Actions = {
     }
     return { success: false, message: "incorrect username or password" };
   },
+
   async logout({ cookies }) {
     cookies.delete("admin", { path: "/" });
     redirect(303, "/");

@@ -7,17 +7,18 @@
   import { getQuizStatus } from "$lib";
 
   const { data } = $props();
-  const { quiz, questions, answers } = $derived(data);
+  const { quiz } = $derived(data);
+  const { questions } = $derived(quiz);
 </script>
 
 <div class="mb-5 flex items-baseline gap-5 pt-15">
   <h1
     contenteditable
     onfocusout={(e) => {
-      manualFetch("?/changequizname", [
-        ["quizID", quiz.id.toString()],
-        ["name", e.currentTarget.innerHTML],
-      ]);
+      manualFetch("?/changequizname", {
+        quizCode: quiz.code.toString(),
+        name: e.currentTarget.innerHTML,
+      });
     }}
     class="min-w-2rem text-2xl"
   >
@@ -27,7 +28,7 @@
 </div>
 <div class="mb-5 flex items-center gap-4">
   <ActionButton action="?/togglestatus" class_="aspect-square w-fit self-center">
-    <input type="hidden" name="quizID" value={quiz.id} />
+    <input type="hidden" name="quizCode" value={quiz.code} />
     <button class="flex h-full w-full items-center justify-center rounded-full bg-green-900 p-2">
       {#if quiz.status === -1}
         <Play size={15}></Play>
@@ -38,10 +39,7 @@
   </ActionButton>
   <p>status: {getQuizStatus(quiz.status)}</p>
   {#if quiz.status !== -1}
-    <a
-      href="/{quiz.code}"
-      class="flex items-center justify-center rounded-full bg-blue-900 p-2"
-    >
+    <a href="/{quiz.code}" class="flex items-center justify-center rounded-full bg-blue-900 p-2">
       <ArrowRight size={15}></ArrowRight>
     </a>
   {/if}
@@ -60,27 +58,27 @@
         class="w-full"
         onchange={(e) => {
           e.currentTarget.value = clamp(e.currentTarget.value, 1, questions.length).toString();
-          manualFetch("?/changequestionorder", [
-            ["questionID", q.id.toString()],
-            ["oldIndex", q.index.toString()],
-            ["newIndex", e.currentTarget.value],
-          ]);
+          manualFetch("?/changequestionorder", {
+            questionID: q.id.toString(),
+            oldIndex: q.index.toString(),
+            newIndex: e.currentTarget.value,
+          });
         }}
       />
       <h3
         contenteditable
         onfocusout={(e) => {
-          manualFetch("?/changequestiontitle", [
-            ["questionID", q.id.toString()],
-            ["title", e.currentTarget.innerHTML],
-          ]);
+          manualFetch("?/changequestiontitle", {
+            questionID: q.id.toString(),
+            title: e.currentTarget.innerHTML,
+          });
         }}
         class="min-w-2rem mb-4"
       >
         {q.title}
       </h3>
       <div class="flex flex-col gap-2">
-        {#each answers[q.index - 1] as a}
+        {#each questions.map((a) => a.answers)[q.index - 1] as a}
           <div
             class="flex w-full justify-between rounded border border-blue-500 pl-2 text-left"
             class:bg-blue-500={a.id === q.correctID}
@@ -88,10 +86,10 @@
             <div
               contenteditable
               onfocusout={(e) => {
-                manualFetch("?/changeanswertitle", [
-                  ["answerID", a.id.toString()],
-                  ["title", e.currentTarget.innerHTML],
-                ]);
+                manualFetch("?/changeanswertitle", {
+                  answerID: a.id.toString(),
+                  title: e.currentTarget.innerHTML,
+                });
               }}
               class="min-w-2rem"
               class:text-white={a.id === q.correctID}
@@ -137,6 +135,6 @@
     </div>
   {/each}
   <AddButton action="?/addquestion" class_="max-w-min min-w-[20rem]">
-    <input type="hidden" name="quizID" value={quiz.id} />
+    <input type="hidden" name="quizCode" value={quiz.code} />
   </AddButton>
 </div>

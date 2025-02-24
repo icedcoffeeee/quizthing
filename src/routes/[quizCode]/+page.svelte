@@ -6,7 +6,21 @@
   import { io } from "socket.io-client";
 
   const { data } = $props();
-  const { quiz, questions, answers, participants, userAnswers, admin, userID } = $derived(data);
+  const { quiz, admin, userID } = $derived(data);
+
+  const { questions } = $derived(quiz);
+  const answers = $derived(
+    questions.map((q) =>
+      q.answers.map<[Answers & { users_bridge: any[] }, number]>((a, i) => [a, i]),
+    ),
+  );
+  const userAnswers = $derived(
+    quiz.users_bridge
+      .map((b) => b.to_user)
+      .find((u) => u.id === userID)
+      ?.answers_bridge.map((b) => b.to_answer),
+  );
+
   const questionIND = $derived(Math.floor(quiz.status) - 1);
   const question: (typeof questions)[number] | undefined = $derived(questions[questionIND]);
   const shown = $derived(quiz.status % 1 !== 0);
@@ -18,6 +32,7 @@
   const trigger = () => {
     socket.emit("update-db");
   };
+
   let userAnswer = $derived(userAnswers ? userAnswers[questionIND] : undefined);
   let chosenAnswerID = $state(0);
 </script>
@@ -40,7 +55,7 @@
             {Math.floor(questions[questionIND].index)}
             {questions[questionIND].title}
           </div>
-          {#each answers[questionIND] as answer, n}
+          {#each answers[questionIND] as [answer, _], n}
             <div class="flex flex-col gap-2">
               <button
                 onclick={() => (!userAnswer ? (chosenAnswerID = answer.id) : null)}
@@ -48,14 +63,14 @@
                 data-[chosen=true]:bg-blue-500
                 data-[correct=true]:border-green-400 data-[correct=true]:bg-green-400"
                 data-correct={answer.id === question?.correctID && shown}
-                data-chosen={answer.id === (userAnswer ?? chosenAnswerID)}
+                data-chosen={answer.id === (userAnswer?.id ?? chosenAnswerID)}
               >
                 <span>{String.fromCharCode(65 + n)}:</span>
                 <span>{answer.title}</span>
               </button>
             </div>
           {/each}
-          {#if userID}
+          {#if !admin}
             <form
               action="?/answer"
               method="post"
@@ -63,8 +78,7 @@
               class="w-fit self-end rounded bg-blue-500 px-2 text-white"
               class:opacity-80={!(userAnswer ?? chosenAnswerID) || shown || !!userAnswer}
             >
-              <input type="hidden" name="chosenAnswerID" value={chosenAnswerID} />
-              <input type="hidden" name="correctID" value={question?.correctID} />
+              <input type="hidden" name="answerID" value={chosenAnswerID} />
               <input type="hidden" name="userID" value={userID} />
               <button
                 disabled={!(userAnswer ?? chosenAnswerID) || shown || !!userAnswer}
@@ -76,19 +90,16 @@
           {/if}
         </div>
         <div class="flex flex-col gap-2 rounded bg-white p-2">
-          {#each answers[questionIND]
-            .map<[Answers, number]>((a, i) => [a, i])
-            .sort((a, b) => (b[0].participantIDs?.length ?? 0) - (a[0].participantIDs?.length ?? 0)) as [answer, ind]}
+          {#each answers[questionIND].sort((a, b) => b[0].users_bridge.length - a[0].users_bridge.length) as [answer, ind]}
             <div
-              style="--amount:{((answer.participantIDs?.length ?? 0) /
-                Math.max(quiz.participantIDs.length, 1)) *
-                100}%"
-              class="w-(--amount) rounded {shown && questions[questionIND].correctID === answer.id
+              style="--amount:{100 *
+                (answer.users_bridge.length / Math.max(quiz.users_bridge.length, 1))}%"
+              class="w-(--amount) rounded {shown && question.correctID === answer.id
                 ? 'bg-green-400'
                 : 'bg-gray-300'} px-2 text-nowrap text-black"
             >
               {!shown ? `??` : String.fromCharCode(65 + ind)}
-              {answer.participantIDs?.length ?? 0}
+              {answer.users_bridge.length}
             </div>
           {/each}
         </div>
@@ -116,7 +127,8 @@
         {#each questions as question (question.id)}
           <form action="?/question" method="post" use:enhance class="contents">
             <input type="hidden" name="quizCode" value={quiz.code} />
-            <input type="hidden" name="questionIND" value={question.index} />
+            <input type="hidden" name="index" value={question.index} />
+            <input type="hidden" name="status" value={quiz.status} />
             <button onclick={trigger} class="aspect-square rounded-full bg-white text-black">
               <div>{question.index}</div>
             </button>
@@ -129,15 +141,20 @@
   <div class="mt-10 rounded-lg bg-white/10 p-4 md:mt-0 md:w-[20rem]">
     <h2 class="mb-4 text-lg">Participants</h2>
     <div class="flex flex-col">
-      {#each participants as participant}
+      {#each quiz.users_bridge.map((b) => b.to_user) as user}
         <p
-          data-chosen={shown &&
-            answers[questionIND]
-              .find((a) => a.id === question?.correctID)
-              ?.participantIDs.includes(participant.id)}
+          data-chosen={user.answers_bridge.map((b) => b.to_answer.id)[questionIND] ===
+            question?.correctID && shown}
           class="data-[chosen=true]:text-green-400"
         >
-          {participant.name} - {participant.correct}
+          {user.name} - {(() => {
+            let corrects = user.answers_bridge
+              .map((b) => b.to_answer.id)
+              .filter((a, i) => {
+                return a === questions[i].correctID && i < (shown ? questionIND + 1 : questionIND);
+              });
+            return corrects.length ?? 0;
+          })()}
         </p>
       {/each}
     </div>

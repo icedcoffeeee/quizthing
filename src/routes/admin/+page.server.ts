@@ -1,19 +1,13 @@
-import { type Actions } from "@sveltejs/kit";
-import { answers_, db, questions_, quizzes_ } from "$lib/server";
+import type { Actions } from "./$types";
+import { db, quizzes_ } from "$lib/server";
+import { eq } from "drizzle-orm";
 import { zfd } from "zod-form-data";
-import { eq, inArray } from "drizzle-orm";
 
 export async function load() {
-  const quizzes = await db.query.quizzes_.findMany();
-  const questionsL = await Promise.all(
-    quizzes.map((q) =>
-      db.query.questions_
-        .findMany({ where: ({ quizID }, { eq }) => eq(quizID, q.id) })
-        .then((r) => r.length),
-    ),
-  );
-
-  return { quizzes, questionsL };
+  const quizzes = await db.query.quizzes_.findMany({
+    with: { users_bridge: true, questions: true },
+  });
+  return { quizzes };
 }
 
 export const actions: Actions = {
@@ -22,25 +16,9 @@ export const actions: Actions = {
     const code = full.substring(full.length - 9, full.length - 3);
     await db.insert(quizzes_).values({ code });
   },
-  async delquiz({ request }) {
-    const schema = zfd.formData({ quizID: zfd.numeric() });
-    const { quizID } = schema.parse(await request.formData());
 
-    await db.query.questions_
-      .findMany({
-        where: ({ quizID }, { eq }) => eq(quizID, quizID),
-      })
-      .then((q) =>
-        db.delete(answers_).where(
-          inArray(
-            answers_.questionID,
-            q.map((i) => i.id),
-          ),
-        ),
-      );
-    await Promise.all([
-      db.delete(quizzes_).where(eq(quizzes_.id, quizID)),
-      db.delete(questions_).where(eq(questions_.quizID, quizID)),
-    ]);
+  async delquiz({ request }) {
+    const { quizCode } = zfd.formData({ quizCode: zfd.text() }).parse(await request.formData());
+    await db.delete(quizzes_).where(eq(quizzes_.code, quizCode));
   },
 };
