@@ -6,9 +6,9 @@
   import { io } from "socket.io-client";
 
   const { data } = $props();
-  const { quiz, questions, answers, userAnswers, admin, userID } = $derived(data);
+  const { quiz, questions, answers, participants, userAnswers, admin, userID } = $derived(data);
   const questionIND = $derived(Math.floor(quiz.status) - 1);
-  const question = $derived(questions[questionIND]);
+  const question: (typeof questions)[number] | undefined = $derived(questions[questionIND]);
   const shown = $derived(quiz.status % 1 !== 0);
 
   const socket = io();
@@ -47,7 +47,7 @@
                 class="w-full rounded border border-blue-500 px-2 text-left
                 data-[chosen=true]:bg-blue-500
                 data-[correct=true]:border-green-400 data-[correct=true]:bg-green-400"
-                data-correct={answer.id === question.correctID && shown}
+                data-correct={answer.id === question?.correctID && shown}
                 data-chosen={answer.id === (userAnswer ?? chosenAnswerID)}
               >
                 <span>{String.fromCharCode(65 + n)}:</span>
@@ -64,6 +64,7 @@
               class:opacity-80={!(userAnswer ?? chosenAnswerID) || shown || !!userAnswer}
             >
               <input type="hidden" name="chosenAnswerID" value={chosenAnswerID} />
+              <input type="hidden" name="correctID" value={question?.correctID} />
               <input type="hidden" name="userID" value={userID} />
               <button
                 disabled={!(userAnswer ?? chosenAnswerID) || shown || !!userAnswer}
@@ -125,8 +126,20 @@
     {/if}
   </div>
 
-  <div class="mt-10 rounded-lg bg-white/10 md:mt-0 md:w-[20rem]">
-    <h2 class="p-4 text-lg">Participants</h2>
-    <div class="flex"></div>
+  <div class="mt-10 rounded-lg bg-white/10 p-4 md:mt-0 md:w-[20rem]">
+    <h2 class="mb-4 text-lg">Participants</h2>
+    <div class="flex flex-col">
+      {#each participants as participant}
+        <p
+          data-chosen={shown &&
+            answers[questionIND]
+              .find((a) => a.id === question?.correctID)
+              ?.participantIDs.includes(participant.id)}
+          class="data-[chosen=true]:text-green-400"
+        >
+          {participant.name} - {participant.correct}
+        </p>
+      {/each}
+    </div>
   </div>
 </div>

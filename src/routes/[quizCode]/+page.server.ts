@@ -1,10 +1,10 @@
-import type { Actions } from "./$types";
-import { answers_, db, quizzes_ } from "$lib/server";
-import { eq, sql } from "drizzle-orm";
-import { error, redirect, type ServerLoadEvent } from "@sveltejs/kit";
+import type { Actions, PageServerLoadEvent } from "./$types";
+import { answers_, db, participants_, quizzes_ } from "$lib/server";
+import { and, eq, inArray, sql } from "drizzle-orm";
+import { error, redirect } from "@sveltejs/kit";
 import { zfd } from "zod-form-data";
 
-export async function load({ parent, params: { quizCode } }: ServerLoadEvent) {
+export async function load({ parent, params: { quizCode } }: PageServerLoadEvent) {
   if (!quizCode) redirect(303, "/");
 
   const quiz = await db.query.quizzes_.findFirst({
@@ -15,8 +15,6 @@ export async function load({ parent, params: { quizCode } }: ServerLoadEvent) {
   if (quiz.status === -1) error(403, "quiz is currently not live");
 
   const { admin, userID } = await parent();
-
-  if (!admin && !userID) redirect(303, `/register?redirect=${quizCode}`);
 
   const questions = await db.query.questions_.findMany({
     where: ({ quizID }, { eq }) => eq(quizID, quiz.id),
@@ -29,13 +27,32 @@ export async function load({ parent, params: { quizCode } }: ServerLoadEvent) {
       }),
     ),
   );
-  const userAnswers = userID
-    ? answers
-        .map((as) => as.find((a) => a.participantIDs.includes(parseInt(userID))))
-        .map((a) => a?.id)
-    : undefined;
 
-  return { quiz, questions, answers, userAnswers };
+  let userAnswers;
+  if (!admin) {
+    if (!userID) {
+      const url = new URL("/register");
+      url.searchParams.append("redirect", quizCode);
+      redirect(303, url);
+    }
+    if (!quiz.participantIDs.includes(parseInt(userID)))
+      await db
+        .update(quizzes_)
+        .set({
+          participantIDs: sql`JSON_ARRAY_INSERT(${quizzes_.participantIDs}, '$[0]', CAST(${userID} AS JSON))`,
+        })
+        .where(and(eq(quizzes_.code, quizCode)));
+    userAnswers = answers
+      .map((as) => as.find((a) => a.participantIDs.includes(parseInt(userID))))
+      .map((a) => a?.id);
+  }
+
+  const participants = await db.query.participants_.findMany({
+    where: ({ id }, { inArray }) => inArray(id, quiz.participantIDs),
+    orderBy: ({ correct }, { desc }) => desc(correct),
+  });
+
+  return { quiz, questions, answers, participants, userAnswers };
 }
 
 export const actions: Actions = {
@@ -55,12 +72,25 @@ export const actions: Actions = {
     const quiz = (await db.query.quizzes_.findFirst({
       where: ({ code }, { eq }) => eq(code, quizCode),
     }))!;
-    const status = quiz.status == questionIND ? quiz.status + 0.5 : questionIND;
+    const status = quiz.status === questionIND ? quiz.status + 0.5 : questionIND;
+    if (quiz.status === questionIND) {
+      const question = (await db.query.questions_.findFirst({
+        where: ({ quizID }, { eq }) => eq(quizID, quiz.id),
+      }))!;
+      const answer = (await db.query.answers_.findFirst({
+        where: ({ id, questionID }, { and, eq }) =>
+          and(eq(questionID, question.id), eq(id, question.correctID!)),
+      }))!;
+      await db
+        .update(participants_)
+        .set({ correct: sql`${participants_.correct} + 1` })
+        .where(inArray(participants_.id, answer.participantIDs));
+    }
     await db.update(quizzes_).set({ status }).where(eq(quizzes_.code, quizCode));
   },
   async answer({ request }) {
-    const { chosenAnswerID, userID } = zfd
-      .formData({ chosenAnswerID: zfd.numeric(), userID: zfd.numeric() })
+    const { chosenAnswerID, correctID, userID } = zfd
+      .formData({ chosenAnswerID: zfd.numeric(), correctID: zfd.numeric(), userID: zfd.numeric() })
       .parse(await request.formData());
     await db
       .update(answers_)
@@ -68,5 +98,6 @@ export const actions: Actions = {
         participantIDs: sql`JSON_ARRAY_INSERT(${answers_.participantIDs}, '$[0]', ${userID})`,
       })
       .where(eq(answers_.id, chosenAnswerID));
+    console.log(chosenAnswerID, correctID, userID);
   },
 };

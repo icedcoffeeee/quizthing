@@ -4,6 +4,7 @@ export const participants_ = mysqlTable("participants", {
   id: serial("id").primaryKey(),
   created: timestamp("created").notNull().defaultNow(),
   name: text("name").notNull(),
+  correct: int("correct").notNull().default(0),
 });
 
 export const quizzes_ = mysqlTable("quizzes", {
