@@ -1,11 +1,12 @@
 <script lang="ts">
-  import type { PageProps } from "./$types";
   import ActionButton from "$components/action-button.svelte";
   import AddButton from "$components/add-button.svelte";
   import DelButton from "$components/del-button.svelte";
+  import type { PageProps } from "./$types";
   import { ArrowRight, Check, Play, Trash, X } from "lucide-svelte";
   import { clamp, manualFetch } from "$lib";
   import { getQuizStatus } from "$lib";
+  import { getusersscores } from "../../[quizCode]/quiz";
 
   const { data, form }: PageProps = $props();
   const { quiz } = $derived(data);
@@ -27,6 +28,7 @@
   </h1>
   <span class="w-fit rounded bg-blue-900 px-1">{quiz.code}</span>
 </div>
+
 <div class="mb-5 flex items-center gap-4">
   <ActionButton action="?/togglestatus" class_="aspect-square w-fit self-center">
     <input type="hidden" name="quizCode" value={quiz.code} />
@@ -48,9 +50,10 @@
     </a>
   {/if}
 </div>
+
 <h2 class="mb-5 text-lg">Questions</h2>
 <div
-  class="-mx-5 flex flex-col items-center gap-4 overflow-auto px-5 pb-5 md:flex-row md:items-start"
+  class="-mx-5 mb-10 flex flex-col items-center gap-4 overflow-auto px-5 pb-5 md:flex-row md:items-start"
 >
   {#each questions as q, n (q.id)}
     <div class="h-fit max-w-min min-w-[20rem] rounded bg-white p-2 text-black">
@@ -141,4 +144,17 @@
   <AddButton action="?/addquestion" class_="max-w-min min-w-[20rem]">
     <input type="hidden" name="quizCode" value={quiz.code} />
   </AddButton>
+</div>
+
+<div class="rounded-lg bg-white/10 p-4 md:mt-0 md:w-[20rem]">
+  <h2 class="mb-4 text-lg">Participants</h2>
+  <div class="flex flex-col">
+    {#each quiz.users_bridge
+      .map((b) => b.to_user)
+      .sort((a, b) => getusersscores(b, questions, true, questions.length) - getusersscores(a, questions, true, questions.length)) as user}
+      <p>
+        {user.name} - {getusersscores(user, questions, true, questions.length)}
+      </p>
+    {/each}
+  </div>
 </div>

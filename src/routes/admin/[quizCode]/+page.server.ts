@@ -9,7 +9,13 @@ export async function load({ params: { quizCode } }: PageServerLoadEvent) {
 
   const quiz = await db.query.quizzes_.findFirst({
     where: eq(quizzes_.code, quizCode),
-    with: { questions: { orderBy: asc(questions_.index), with: { answers: true } } },
+    with: {
+      questions: { orderBy: asc(questions_.index), with: { answers: true } },
+      users_bridge: {
+        columns: {},
+        with: { to_user: { with: { answers_bridge: { columns: {}, with: { to_answer: true } } } } },
+      },
+    },
   });
   if (!quiz) error(404, "quiz not found");
 
@@ -61,6 +67,7 @@ export const actions: Actions = {
     const { answerID } = zfd.formData({ answerID: zfd.numeric() }).parse(await request.formData());
 
     await db.delete(answers_).where(eq(answers_.id, answerID));
+    await db.update(questions_).set({ correctID: null }).where(eq(questions_.correctID, answerID));
   },
 
   async coranswer({ request }: RequestEvent) {

@@ -135,7 +135,9 @@
   <div class="mt-10 rounded-lg bg-white/10 p-4 md:mt-0 md:w-[20rem]">
     <h2 class="mb-4 text-lg">Participants</h2>
     <div class="flex flex-col">
-      {#each quiz.users_bridge.map((b) => b.to_user) as user}
+      {#each quiz.users_bridge
+        .map((b) => b.to_user)
+        .sort((a, b) => getusersscores(b, questions, shown, questionIND) - getusersscores(a, questions, shown, questionIND)) as user}
         <p
           data-chosen={getuseranswers(quiz, user.id)?.some((a) => a.id === question?.correctID) &&
             shown}
