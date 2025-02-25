@@ -10,9 +10,13 @@ export async function load({ url, parent }: PageServerLoadEvent) {
 }
 
 export const actions: Actions = {
-  async register({ request, url, cookies }) {
-    const { name: name_ } = zfd.formData({ name: zfd.text() }).parse(await request.formData());
+  async register({ request, cookies }) {
+    const { name: name_, url: url_ } = zfd
+      .formData({ name: zfd.text(), url: zfd.text() })
+      .parse(await request.formData());
     const name = name_.toLowerCase();
+    const url = new URL(url_)
+
     let user = await db.query.users_.findFirst({ where: eq(users_.name, name) });
     if (!user) user = (await db.insert(users_).values({ name }).returning())[0];
     cookies.set("user", user.id.toString(), {
