@@ -3,14 +3,17 @@
   import AddButton from "$components/add-button.svelte";
   import DelButton from "$components/del-button.svelte";
   import type { PageProps } from "./$types";
+  import type { User } from "$lib/server";
   import { ArrowRight, Check, Play, Trash, X } from "lucide-svelte";
-  import { clamp, manualFetch } from "$lib";
-  import { getQuizStatus } from "$lib";
-  import { getusersscores } from "../../[quizCode]/quiz";
+  import { getQuizStatus, clamp, manualFetch } from "$lib";
 
   const { data, form }: PageProps = $props();
-  const { quiz } = $derived(data);
-  const { questions } = $derived(quiz);
+  const { quiz, questions, answers, users } = $derived(data);
+
+  const getusercorrectanswers = (u: User) =>
+    answers
+      .flat()
+      .map((a) => a.userIDs.includes(u.id) && questions.map((q) => q.correctID).includes(a.id));
 </script>
 
 <div class="mb-5 flex items-baseline gap-5 pt-15">
@@ -24,7 +27,7 @@
     }}
     class="min-w-2rem text-2xl"
   >
-    {quiz.name}
+    {quiz.title}
   </h1>
   <span class="w-fit rounded bg-blue-900 px-1">{quiz.code}</span>
 </div>
@@ -85,7 +88,7 @@
         {q.title}
       </h3>
       <div class="flex flex-col gap-2">
-        {#each questions.map((a) => a.answers)[q.index - 1] as a}
+        {#each answers[n] as a}
           <div
             class="flex w-full justify-between rounded border border-blue-500 pl-2 text-left"
             class:bg-blue-500={a.id === q.correctID}
@@ -143,17 +146,16 @@
   {/each}
   <AddButton action="?/addquestion" class_="max-w-min min-w-[20rem]">
     <input type="hidden" name="quizCode" value={quiz.code} />
+    <input type="hidden" name="lastIndex" value={questions.length} />
   </AddButton>
 </div>
 
 <div class="rounded-lg bg-white/10 p-4 md:mt-0 md:w-[20rem]">
   <h2 class="mb-4 text-lg">Participants</h2>
   <div class="flex flex-col">
-    {#each quiz.users_bridge
-      .map((b) => b.to_user)
-      .sort((a, b) => getusersscores(b, questions, true, questions.length) - getusersscores(a, questions, true, questions.length)) as user}
+    {#each users.sort((u1, u2) => getusercorrectanswers(u2).filter((a) => !!a).length - getusercorrectanswers(u1).filter((a) => !!a).length) as user}
       <p>
-        {user.name} - {getusersscores(user, questions, true, questions.length)}
+        {user.name} - {getusercorrectanswers(user).filter((a) => !!a).length}
       </p>
     {/each}
   </div>

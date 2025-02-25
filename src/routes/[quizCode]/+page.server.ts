@@ -1,32 +1,22 @@
 import type { Actions, PageServerLoadEvent, RequestEvent } from "./$types";
-import { db, questions_, quizzes_, users_answers, users_quizzes } from "$lib/server";
-import { asc, eq, sql } from "drizzle-orm";
+import { asc, eq, inArray, sql } from "drizzle-orm";
 import { error, redirect } from "@sveltejs/kit";
 import { zfd } from "zod-form-data";
+import { answers_, db, questions_, quizzes_, users_ } from "$lib/server";
 
 export async function load({ parent, params: { quizCode } }: PageServerLoadEvent) {
-  // prettier-ignore
-  const fetchQuiz = db.query.quizzes_.findFirst({
-    where: eq(quizzes_.code, quizCode),
-    with: {
-      questions: {
-        orderBy: asc(questions_.index),
-        with: { answers: { with: { users_bridge: {
-          columns: {},
-          with: { to_answer: true },
-        }}}},
-      },
-      users_bridge: {
-        columns: {},
-        with: { to_user: { with: { answers_bridge: {
-          columns: {},
-          with: { to_answer: true },
-        }}}},
-      },
-    },
+  let quiz = (await db.query.quizzes_.findFirst({ where: eq(quizzes_.code, quizCode) }))!;
+  const questions = await db.query.questions_.findMany({
+    where: inArray(questions_.id, quiz.questionIDs),
+    orderBy: asc(questions_.index),
   });
-
-  let quiz = (await fetchQuiz)!;
+  const answers = await Promise.all(
+    questions.map((q) =>
+      db.query.answers_.findMany({
+        where: inArray(answers_.id, q.answerIDs),
+      }),
+    ),
+  );
 
   if (!quiz) error(404, "quiz not found");
   if (quiz.status === -1) error(403, "quiz is currently not live");
@@ -36,13 +26,18 @@ export async function load({ parent, params: { quizCode } }: PageServerLoadEvent
     if (!userID) {
       redirect(303, `/register?redirect=${quizCode}`);
     }
-    if (!quiz.users_bridge.map((b) => b.to_user.id).includes(userID)) {
-      await db.insert(users_quizzes).values({ userID, quizCode });
-      quiz = (await fetchQuiz)!;
+    if (!quiz.userIDs.includes(userID)) {
+      await db
+        .update(quizzes_)
+        .set({ userIDs: sql`array_append(${quizzes_.userIDs}, ${userID})` })
+        .where(eq(quizzes_.code, quizCode));
+      quiz.userIDs.push(userID);
     }
   }
 
-  return { quiz };
+  const users = await db.query.users_.findMany({ where: inArray(users_.id, quiz.userIDs) });
+
+  return { quiz, questions, answers, users };
 }
 
 async function setstatus(request: Request, status: number) {
@@ -73,6 +68,9 @@ export const actions: Actions = {
       .parse(await request.formData());
 
     // link answer to user
-    await db.insert(users_answers).values({ userID, answerID });
+    await db
+      .update(answers_)
+      .set({ userIDs: sql`array_append(${answers_.userIDs}, ${userID})` })
+      .where(eq(answers_.id, answerID));
   },
 };
