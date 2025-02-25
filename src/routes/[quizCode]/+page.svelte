@@ -1,25 +1,22 @@
 <script lang="ts">
-  import type { Answers } from "$lib/server/db";
   import { Pause, X } from "lucide-svelte";
   import { enhance } from "$app/forms";
   import { invalidateAll } from "$app/navigation";
   import { io } from "socket.io-client";
+  import {
+    getanswersandindex,
+    getfractionalcsswidth,
+    getsortedanswersandindex,
+    getuseranswers,
+    getusersscores,
+  } from "./quiz";
 
   const { data } = $props();
   const { quiz, admin, userID } = $derived(data);
 
   const { questions } = $derived(quiz);
-  const answers = $derived(
-    questions.map((q) =>
-      q.answers.map<[Answers & { users_bridge: any[] }, number]>((a, i) => [a, i]),
-    ),
-  );
-  const userAnswers = $derived(
-    quiz.users_bridge
-      .map((b) => b.to_user)
-      .find((u) => u.id === userID)
-      ?.answers_bridge.map((b) => b.to_answer),
-  );
+  const answers = $derived(getanswersandindex(questions));
+  const userAnswers = $derived(getuseranswers(quiz, userID));
 
   const questionIND = $derived(Math.floor(quiz.status) - 1);
   const question: (typeof questions)[number] | undefined = $derived(questions[questionIND]);
@@ -35,6 +32,9 @@
 
   let userAnswer = $derived(userAnswers ? userAnswers[questionIND] : undefined);
   let chosenAnswerID = $state(0);
+  $effect(() => {
+    console.log(quiz.status);
+  });
 </script>
 
 <div class="mb-5 flex items-baseline gap-5 pt-15">
@@ -90,10 +90,9 @@
           {/if}
         </div>
         <div class="flex flex-col gap-2 rounded bg-white p-2">
-          {#each answers[questionIND].sort((a, b) => b[0].users_bridge.length - a[0].users_bridge.length) as [answer, ind]}
+          {#each getsortedanswersandindex(answers, questionIND) as [answer, ind]}
             <div
-              style="--amount:{100 *
-                (answer.users_bridge.length / Math.max(quiz.users_bridge.length, 1))}%"
+              style="--amount:{getfractionalcsswidth(answer, quiz)}%"
               class="w-(--amount) rounded {shown && question.correctID === answer.id
                 ? 'bg-green-400'
                 : 'bg-gray-300'} px-2 text-nowrap text-black"
@@ -147,14 +146,7 @@
             question?.correctID && shown}
           class="data-[chosen=true]:text-green-400"
         >
-          {user.name} - {(() => {
-            let corrects = user.answers_bridge
-              .map((b) => b.to_answer.id)
-              .filter((a, i) => {
-                return a === questions[i].correctID && i < (shown ? questionIND + 1 : questionIND);
-              });
-            return corrects.length ?? 0;
-          })()}
+          {user.name} - {getusersscores(user, questions, shown, questionIND)}
         </p>
       {/each}
     </div>

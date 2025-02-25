@@ -8,7 +8,7 @@ if (!env.DATABASE_URL) throw new Error("DATABASE_URL is not set");
 const client = postgres(env.DATABASE_URL);
 export const db = drizzle({ client, schema });
 
-export type Participants = typeof schema.users_.$inferSelect;
-export type Quizzes = typeof schema.quizzes_.$inferSelect;
-export type Questions = typeof schema.questions_.$inferSelect;
-export type Answers = typeof schema.answers_.$inferSelect;
+export type User = typeof schema.users_.$inferSelect;
+export type Quiz = typeof schema.quizzes_.$inferSelect;
+export type Question = typeof schema.questions_.$inferSelect;
+export type Answer = typeof schema.answers_.$inferSelect;
