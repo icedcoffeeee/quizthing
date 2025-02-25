@@ -2,6 +2,7 @@ import type { Actions, PageServerLoadEvent } from "./$types";
 import { db, users_ } from "$lib/server";
 import { redirect } from "@sveltejs/kit";
 import { zfd } from "zod-form-data";
+import { eq } from "drizzle-orm";
 
 export async function load({ url, parent }: PageServerLoadEvent) {
   const { userID } = await parent();
@@ -10,8 +11,10 @@ export async function load({ url, parent }: PageServerLoadEvent) {
 
 export const actions: Actions = {
   async register({ request, url, cookies }) {
-    const { name } = zfd.formData({ name: zfd.text() }).parse(await request.formData());
-    const user = (await db.insert(users_).values({ name }).returning())[0];
+    const { name: name_ } = zfd.formData({ name: zfd.text() }).parse(await request.formData());
+    const name = name_.toLowerCase();
+    let user = await db.query.users_.findFirst({ where: eq(users_.name, name) });
+    if (!user) user = (await db.insert(users_).values({ name }).returning())[0];
     cookies.set("user", user.id.toString(), {
       path: "/",
       maxAge: 60 * 60 * 24 * 30,

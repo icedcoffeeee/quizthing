@@ -116,13 +116,18 @@ export const actions: Actions = {
   async togglestatus({ request }: RequestEvent) {
     const { quizCode } = zfd.formData({ quizCode: zfd.text() }).parse(await request.formData());
 
-    const quiz = (await db.query.quizzes_.findFirst({ where: eq(quizzes_.code, quizCode) }))!;
+    const quiz = (await db.query.quizzes_.findFirst({
+      where: eq(quizzes_.code, quizCode),
+      with: { questions: true },
+    }))!;
     if (quiz.status >= 0) {
       await db.update(quizzes_).set({ status: -1 }).where(eq(quizzes_.code, quizCode));
       return;
     }
 
-    // TODO: check qualifications
+    if (quiz.questions.some((q) => !q.correctID))
+      return { error: "choose correct answers for each question!" };
+
     await db.update(quizzes_).set({ status: 0 }).where(eq(quizzes_.code, quizCode));
     redirect(303, `/${quiz.code}`);
   },

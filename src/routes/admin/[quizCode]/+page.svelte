@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { PageProps } from "./$types";
   import ActionButton from "$components/action-button.svelte";
   import AddButton from "$components/add-button.svelte";
   import DelButton from "$components/del-button.svelte";
@@ -6,7 +7,7 @@
   import { clamp, manualFetch } from "$lib";
   import { getQuizStatus } from "$lib";
 
-  const { data } = $props();
+  const { data, form }: PageProps = $props();
   const { quiz } = $derived(data);
   const { questions } = $derived(quiz);
 </script>
@@ -38,6 +39,9 @@
     </button>
   </ActionButton>
   <p>status: {getQuizStatus(quiz.status)}</p>
+  {#if form && form.error}
+    <p class="text-red-400">{form.error}</p>
+  {/if}
   {#if quiz.status !== -1}
     <a href="/{quiz.code}" class="flex items-center justify-center rounded-full bg-blue-900 p-2">
       <ArrowRight size={15}></ArrowRight>

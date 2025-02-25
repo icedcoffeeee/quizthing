@@ -7,7 +7,7 @@ export function getQuizStatus(status: number) {
     case 0:
       return "waiting";
     default:
-      return `on question ${status}`;
+      return `on question ${Math.floor(status)}`;
   }
 }
 

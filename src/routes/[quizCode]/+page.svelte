@@ -1,6 +1,7 @@
 <script lang="ts">
+  import type { PageProps, SubmitFunction } from "./$types";
   import { Pause, X } from "lucide-svelte";
-  import { enhance } from "$app/forms";
+  import { applyAction, enhance } from "$app/forms";
   import { invalidateAll } from "$app/navigation";
   import { io } from "socket.io-client";
   import {
@@ -11,7 +12,7 @@
     getusersscores,
   } from "./quiz";
 
-  const { data } = $props();
+  const { data }: PageProps = $props();
   const { quiz, admin, userID } = $derived(data);
 
   const { questions } = $derived(quiz);
@@ -26,15 +27,16 @@
   socket.on("db-updated", () => {
     invalidateAll();
   });
-  const trigger = () => {
-    socket.emit("update-db");
-  };
+  const trigger: SubmitFunction =
+    ({}) =>
+    async ({ result, update }) => {
+      await applyAction(result);
+      await update({ invalidateAll: true });
+      socket.emit("update-db");
+    };
 
   let userAnswer = $derived(userAnswers ? userAnswers[questionIND] : undefined);
   let chosenAnswerID = $state(0);
-  $effect(() => {
-    console.log(quiz.status);
-  });
 </script>
 
 <div class="mb-5 flex items-baseline gap-5 pt-15">
@@ -74,16 +76,13 @@
             <form
               action="?/answer"
               method="post"
-              use:enhance
+              use:enhance={trigger}
               class="w-fit self-end rounded bg-blue-500 px-2 text-white"
               class:opacity-80={!(userAnswer ?? chosenAnswerID) || shown || !!userAnswer}
             >
               <input type="hidden" name="answerID" value={chosenAnswerID} />
               <input type="hidden" name="userID" value={userID} />
-              <button
-                disabled={!(userAnswer ?? chosenAnswerID) || shown || !!userAnswer}
-                onclick={trigger}
-              >
+              <button disabled={!(userAnswer ?? chosenAnswerID) || shown || !!userAnswer}>
                 Submit
               </button>
             </form>
@@ -110,25 +109,21 @@
         style="--col:{Math.min(questions.length + 2, 10)}"
         class="absolute bottom-0 grid translate-y-full grid-cols-[repeat(var(--col),1fr)] gap-2"
       >
-        <form action="?/stop" method="post" use:enhance class="contents">
+        <form action="?/stop" method="post" use:enhance={trigger} class="contents">
           <input type="hidden" name="quizCode" value={quiz.code} />
-          <button onclick={trigger} class="aspect-square rounded-full bg-green-900 p-2">
+          <button class="aspect-square rounded-full bg-green-900 p-2">
             <X size={15}></X>
           </button>
-          <button
-            onclick={trigger}
-            formaction="?/pause"
-            class="aspect-square rounded-full bg-blue-900 p-2"
-          >
+          <button formaction="?/pause" class="aspect-square rounded-full bg-blue-900 p-2">
             <Pause size={15}></Pause>
           </button>
         </form>
         {#each questions as question (question.id)}
-          <form action="?/question" method="post" use:enhance class="contents">
+          <form action="?/question" method="post" use:enhance={trigger} class="contents">
             <input type="hidden" name="quizCode" value={quiz.code} />
             <input type="hidden" name="index" value={question.index} />
             <input type="hidden" name="status" value={quiz.status} />
-            <button onclick={trigger} class="aspect-square rounded-full bg-white text-black">
+            <button class="aspect-square rounded-full bg-white text-black">
               <div>{question.index}</div>
             </button>
           </form>
@@ -142,8 +137,8 @@
     <div class="flex flex-col">
       {#each quiz.users_bridge.map((b) => b.to_user) as user}
         <p
-          data-chosen={user.answers_bridge.map((b) => b.to_answer.id)[questionIND] ===
-            question?.correctID && shown}
+          data-chosen={getuseranswers(quiz, user.id)?.some((a) => a.id === question?.correctID) &&
+            shown}
           class="data-[chosen=true]:text-green-400"
         >
           {user.name} - {getusersscores(user, questions, shown, questionIND)}

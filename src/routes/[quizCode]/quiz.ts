@@ -14,13 +14,18 @@ export function getsortedanswersandindex<T extends Answer & { users_bridge: any[
 }
 
 export function getuseranswers(
-  quiz: Quiz & { users_bridge: { to_user: User & { answers_bridge: { to_answer: Answer }[] } }[] },
+  quiz: Quiz & {
+    questions: (Question & { answers: Answer[] })[];
+    users_bridge: { to_user: User & { answers_bridge: { to_answer: Answer }[] } }[];
+  },
   userID?: number,
 ) {
-  return quiz.users_bridge
+  const user_answers = quiz.users_bridge
     .map((b) => b.to_user)
     .find((u) => u.id === userID)
     ?.answers_bridge.map((b) => b.to_answer);
+  const quiz_answerIDs = quiz.questions.flatMap((q) => q.answers).map((a) => a.id);
+  return user_answers?.filter((a) => quiz_answerIDs.includes(a.id));
 }
 
 export function getfractionalcsswidth<T extends { users_bridge: any[] }>(
@@ -32,13 +37,17 @@ export function getfractionalcsswidth<T extends { users_bridge: any[] }>(
 
 export function getusersscores(
   user: User & { answers_bridge: { to_answer: Answer }[] },
-  questions: Question[],
+  questions: (Question & { answers: Answer[] })[],
   shown: boolean,
   index: number,
 ) {
-  return (
-    user.answers_bridge
-      .map((b) => b.to_answer.id)
-      .filter((a, i) => a === questions[i].correctID && i < (shown ? index + 1 : index)).length ?? 0
-  );
+  const u_answers = user.answers_bridge.map((b) => b.to_answer);
+  const scores = u_answers
+    .filter(
+      (a) =>
+        questions?.map((q) => q.id).includes(a.questionID) &&
+        questions?.map((q) => q.correctID).includes(a.id),
+    )
+    .filter((_, i) => i < (shown ? index + 1 : index));
+  return scores.length;
 }

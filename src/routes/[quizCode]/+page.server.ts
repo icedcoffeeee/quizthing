@@ -6,7 +6,7 @@ import { zfd } from "zod-form-data";
 
 export async function load({ parent, params: { quizCode } }: PageServerLoadEvent) {
   // prettier-ignore
-  const quiz = await db.query.quizzes_.findFirst({
+  const fetchQuiz = db.query.quizzes_.findFirst({
     where: eq(quizzes_.code, quizCode),
     with: {
       questions: {
@@ -26,6 +26,8 @@ export async function load({ parent, params: { quizCode } }: PageServerLoadEvent
     },
   });
 
+  let quiz = (await fetchQuiz)!;
+
   if (!quiz) error(404, "quiz not found");
   if (quiz.status === -1) error(403, "quiz is currently not live");
 
@@ -34,8 +36,10 @@ export async function load({ parent, params: { quizCode } }: PageServerLoadEvent
     if (!userID) {
       redirect(303, `/register?redirect=${quizCode}`);
     }
-    if (!quiz.users_bridge.map((b) => b.to_user.id).includes(userID))
+    if (!quiz.users_bridge.map((b) => b.to_user.id).includes(userID)) {
       await db.insert(users_quizzes).values({ userID, quizCode });
+      quiz = (await fetchQuiz)!;
+    }
   }
 
   return { quiz };
