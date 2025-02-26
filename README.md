@@ -1,38 +1,38 @@
-# sv
+# QuizThing
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+An open-source self-host alternative to ItemPool.
 
-## Creating a project
+## Requirements
 
-If you're seeing this, you've probably already done this step. Congrats!
+1. docker & docker compose
+1. npm & bun
 
-```bash
-# create a new project in the current directory
-npx sv create
-
-# create a new project in my-app
-npx sv create my-app
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+## Usage
 
 ```bash
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+git clone https://github.com/icedcoffeeee/quizthing
+cd quizthing
+docker compose pull
+docker compose up -d
+bun db:push
+bun run build
+bun start
 ```
 
-## Building
+Then, the website is live at `http://localhost:4173`. Connect to the same
+network at `http://{ your ip }:4173`. Feel free to port-forward for WAN use.
 
-To create a production version of your app:
+## Todo
 
-```bash
-npm run build
-```
+- [ ] add media support (images, videos)
+- [ ] add KaTeX support (math)
 
-You can preview the production build with `npm run preview`.
+## Contributing
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+- Open an issue
+- Let me approve feature additions before opening pull request
+- Don't be rude
+
+## License
+
+MIT
