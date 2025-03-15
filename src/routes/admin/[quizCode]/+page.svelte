@@ -1,7 +1,7 @@
 <script lang="ts">
-  import ActionButton from "$components/action-button.svelte";
-  import AddButton from "$components/add-button.svelte";
-  import DelButton from "$components/del-button.svelte";
+  import ActionButton from "$com/action-button.svelte";
+  import AddButton from "$com/add-button.svelte";
+  import DelButton from "$com/del-button.svelte";
   import type { PageProps } from "./$types";
   import type { User } from "$lib/server";
   import { ArrowRight, Check, Play, Trash, X } from "lucide-svelte";

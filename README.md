@@ -19,8 +19,8 @@ bun run build
 bun start
 ```
 
-Then, the website is live at `http://localhost:4173`. Connect to the same
-network at `http://{ your ip }:4173`. Feel free to port-forward for WAN use.
+Then, the website is live at `http://localhost:3000`. Connect to the same
+network at `http://{ your ip }:3000`. Feel free to port-forward for WAN use.
 
 ## Todo
 
