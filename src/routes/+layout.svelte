@@ -11,6 +11,10 @@
   let toggleNav = () => (nav = !nav);
 </script>
 
+<svelte:head>
+  <title>QuizThing</title>
+</svelte:head>
+
 <button onclick={toggleNav} class="absolute top-0 flex w-full justify-end p-5 text-white md:hidden">
   <Menu></Menu>
 </button>
@@ -30,11 +34,11 @@
   <span class="contents md:flex md:gap-8">
     <a onclick={toggleNav} href="/about">about</a>
     {#if !admin}
-      <form action="?/login" method="post">
+      <form action="/?/login" method="post">
         <button onclick={toggleNav}>log in</button>
       </form>
     {:else}
-      <form action="?/logout" method="post">
+      <form action="/?/logout" method="post">
         <button onclick={toggleNav}>log out</button>
       </form>
     {/if}

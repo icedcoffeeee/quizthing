@@ -8,7 +8,7 @@ declare global {
   namespace App {
     // interface Error {}
     interface Locals {
-      user: z.infer<typeof subjects.user>;
+      user?: z.infer<typeof subjects.user>;
     }
     // interface PageData {}
     // interface PageState {}

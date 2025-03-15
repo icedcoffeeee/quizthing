@@ -3,17 +3,23 @@ import type { Cookies } from "@sveltejs/kit";
 import { createClient } from "@openauthjs/openauth/client";
 
 export const client = createClient({
-  clientID: "nextjs",
+  clientID: "sveltekit",
   issuer: "http://localhost:3001",
 });
 
+export const auth_cookie_opts: CookieSerializeOptions & { path: string } = {
+  httpOnly: true,
+  sameSite: "lax",
+  path: "/",
+  maxAge: 34560000,
+};
+
 export async function setTokens(cookies: Cookies, access: string, refresh: string) {
-  const opts: CookieSerializeOptions & { path: string } = {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 34560000,
-  };
-  cookies.set("access_token", access, opts);
-  cookies.set("refresh_token", refresh, opts);
+  cookies.set("access_token", access, auth_cookie_opts);
+  cookies.set("refresh_token", refresh, auth_cookie_opts);
+}
+
+export async function removeTokens(cookies: Cookies) {
+  cookies.delete("access_token", auth_cookie_opts);
+  cookies.delete("refresh_token", auth_cookie_opts);
 }

@@ -8,10 +8,10 @@ export const handle: Handle = async ({ event, resolve }) => {
 
   if (access) {
     const verified = await client.verify(subjects, access, { refresh });
-    if (!verified.err && verified.tokens) {
+    if (verified.err) return new Response(verified.err.message);
+    if (verified.tokens)
       await setTokens(event.cookies, verified.tokens.access, verified.tokens.refresh);
-      event.locals.user = verified.subject.properties;
-    }
+    event.locals.user = verified.subject.properties;
   }
   return resolve(event);
 };
