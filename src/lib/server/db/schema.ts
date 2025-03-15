@@ -45,5 +45,5 @@ export const answers_ = pgTable("answers", {
 export const users_ = pgTable("users", {
   id: serial("id").primaryKey(),
   created: timestamp("created").notNull().defaultNow(),
-  name: varchar("name").notNull(),
+  username: varchar("username").notNull(),
 });

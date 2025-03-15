@@ -13,6 +13,7 @@
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "format": "prettier --write .",
     "lint": "prettier --check .",
+    "auth": "PORT=3001 bun run --hot src/auth.ts",
     "db:start": "docker compose up -d",
     "db:push": "drizzle-kit push",
     "db:migrate": "drizzle-kit migrate",
