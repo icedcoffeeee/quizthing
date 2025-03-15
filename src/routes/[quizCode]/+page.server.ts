@@ -4,8 +4,11 @@ import { error, redirect } from "@sveltejs/kit";
 import { zfd } from "zod-form-data";
 import { answers_, db, questions_, quizzes_, users_ } from "$lib/server";
 
-export async function load({ parent, params: { quizCode } }: PageServerLoadEvent) {
-  let quiz = (await db.query.quizzes_.findFirst({ where: eq(quizzes_.code, quizCode) }))!;
+export async function load({ fetch, parent, params: { quizCode } }: PageServerLoadEvent) {
+  let quiz = await db.query.quizzes_.findFirst({ where: eq(quizzes_.code, quizCode) });
+  if (!quiz) error(404, "quiz not found");
+  if (quiz.status === -1) error(403, "quiz is currently not live");
+
   const questions = await db.query.questions_.findMany({
     where: inArray(questions_.id, quiz.questionIDs),
     orderBy: asc(questions_.index),
@@ -18,14 +21,11 @@ export async function load({ parent, params: { quizCode } }: PageServerLoadEvent
     ),
   );
 
-  if (!quiz) error(404, "quiz not found");
-  if (quiz.status === -1) error(403, "quiz is currently not live");
-
-  const { admin, userID } = await parent();
+  const { admin, user } = await parent();
   if (!admin) {
-    if (!userID) {
-      redirect(303, `/register?redirect=${quizCode}`);
-    }
+    if (!user) return fetch("/?/login");
+    const userID = user.id;
+
     if (!quiz.userIDs.includes(userID)) {
       await db
         .update(quizzes_)

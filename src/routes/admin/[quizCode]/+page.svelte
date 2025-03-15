@@ -155,7 +155,7 @@
   <div class="flex flex-col">
     {#each users.sort((u1, u2) => getusercorrectanswers(u2).filter((a) => !!a).length - getusercorrectanswers(u1).filter((a) => !!a).length) as user}
       <p>
-        {user.name} - {getusercorrectanswers(user).filter((a) => !!a).length}
+        {user.username} - {getusercorrectanswers(user).filter((a) => !!a).length}
       </p>
     {/each}
   </div>
