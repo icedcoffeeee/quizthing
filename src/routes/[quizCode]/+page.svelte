@@ -141,7 +141,6 @@
     <h2 class="mb-4 text-lg">Participants</h2>
     <div class="flex flex-col">
       {#each users.sort((u1, u2) => {
-        console.log(u1);
         return getusercorrectanswers(u2).filter((a) => !!a).length - getusercorrectanswers(u1).filter((a) => !!a).length;
       }) as user}
         <p

@@ -24,8 +24,8 @@ export default issuer({
   providers: {
     password: PasswordProvider(
       PasswordUI({
-        async sendCode(username, code) {
-          console.log(username, code);
+        async sendCode(email, code) {
+          console.log(email, code);
         },
       }),
     ),

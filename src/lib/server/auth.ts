@@ -7,19 +7,19 @@ export const client = createClient({
   issuer: "http://localhost:3001",
 });
 
-export const auth_cookie_opts: CookieSerializeOptions & { path: string } = {
+const auth_cookie_opts: CookieSerializeOptions & { path: string } = {
   httpOnly: true,
   sameSite: "lax",
   path: "/",
   maxAge: 34560000,
 };
 
-export async function setTokens(cookies: Cookies, access: string, refresh: string) {
+export function setTokens(cookies: Cookies, access: string, refresh: string) {
   cookies.set("access_token", access, auth_cookie_opts);
   cookies.set("refresh_token", refresh, auth_cookie_opts);
 }
 
-export async function removeTokens(cookies: Cookies) {
+export function removeTokens(cookies: Cookies) {
   cookies.delete("access_token", auth_cookie_opts);
   cookies.delete("refresh_token", auth_cookie_opts);
 }
