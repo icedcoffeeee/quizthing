@@ -13,8 +13,10 @@
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "format": "prettier --write .",
     "lint": "prettier --check .",
+    "auth": "PORT=3001 bun run --hot src/auth.ts",
     "db:start": "docker compose up -d",
     "db:push": "drizzle-kit push",
+    "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio"
   },
@@ -37,6 +39,7 @@
     "vite": "^6.0.0"
   },
   "dependencies": {
+    "@openauthjs/openauth": "^0.4.3",
     "@types/express": "^5.0.0",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.38.4",

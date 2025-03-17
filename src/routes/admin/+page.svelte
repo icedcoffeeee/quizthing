@@ -1,6 +1,6 @@
 <script lang="ts">
-  import AddButton from "$components/add-button.svelte";
-  import DelButton from "$components/del-button.svelte";
+  import AddButton from "$com/add-button.svelte";
+  import DelButton from "$com/del-button.svelte";
   import { getQuizStatus } from "$lib";
 
   const { data } = $props();

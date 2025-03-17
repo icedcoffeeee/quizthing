@@ -1,4 +1,5 @@
 <form
+  action="?/gotoquiz"
   method="post"
   class="flex flex min-h-screen w-full flex-col items-center justify-center gap-4"
 >
