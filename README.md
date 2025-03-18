@@ -24,8 +24,9 @@ bun start
 Then, the website is live at `http://localhost:3000`. Connect to the same
 network at `http://{ your ip }:3000`. Feel free to port-forward for WAN use.
 
-[!NOTE] the authentication process is currently unstable, the confirmation code
-is not delivered to emails, but logged to console.
+> [!NOTE]
+>  the authentication process is currently unstable, the confirmation code is
+>  not delivered to emails, but logged to console.
 
 ## Usage
 - Create a new quiz
