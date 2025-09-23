@@ -5,7 +5,7 @@
   import { Menu, X } from "lucide-svelte";
 
   let { children, data } = $props();
-  const { admin } = $derived(data);
+  const { admin, user } = $derived(data);
 
   let nav = $state(false);
   let toggleNav = () => (nav = !nav);
@@ -33,7 +33,7 @@
   <a onclick={toggleNav} href="/" class="md:hidden">home</a>
   <span class="contents md:flex md:gap-8">
     <a onclick={toggleNav} href="/about">about</a>
-    {#if !admin}
+    {#if !admin && !user}
       <form action="/?/login" method="post">
         <button onclick={toggleNav}>log in</button>
       </form>
