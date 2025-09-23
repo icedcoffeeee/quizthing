@@ -12,8 +12,11 @@ An open-source self-host alternative to ItemPool.
 ```bash
 git clone https://github.com/icedcoffeeee/quizthing
 cd quizthing
+cp .env.example .env
+# ^^ customize values
 docker compose pull
 docker compose up -d
+bun db:generate
 bun db:push
 bun run auth
 # vv new terminal instance
