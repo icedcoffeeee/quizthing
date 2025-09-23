@@ -53,14 +53,15 @@ export default issuer({
     const { provider, email } = value;
     if (provider === "password") {
       const username = email.split("@")[0];
-      const insert = db
-        .insert(users_)
-        .values({ email, username })
-        .returning()
-        .then((u) => u[0]);
-      const { id } = await db.query.users_
-        .findFirst({ where: eq(users_.email, email) })
-        .then(async (u) => u ?? (await insert));
+      const { id } = await db.query.users_.findFirst({ where: eq(users_.email, email) }).then(
+        async (u) =>
+          u ??
+          (await db
+            .insert(users_)
+            .values({ email, username })
+            .returning()
+            .then((u) => u[0])),
+      );
 
       return ctx.subject("user", { id, email, username });
     }
